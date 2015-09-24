@@ -1,0 +1,35 @@
+-
+  type: WebAction
+  actor: baidu
+  method: search
+  description: Get a nearby restaurant
+-
+  type: WebAction
+  actor: baidu
+  method: detail
+  description: Get the details of that restaurant
+-
+  type: WebAction
+  actor: baidu
+  method: eventdetail
+  description: Get the Groupon discount info.
+-
+  type: WebAction
+  actor: juhe
+  method: weather
+  description: Get the weather in recent hours
+-
+  type: fork
+  branches:
+      -
+      type: WebAction
+      actor: juhe
+      method: weather
+      description: Get the quility of air
+    -
+      type: WebAction
+      actor: baidu
+      method: direct
+      description: Get the routes to the restaurant
+-
+  type: join
