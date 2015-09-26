@@ -1,3 +1,5 @@
+require 'net/http'
+
 module WebAPI
   class Base
     attr_accessor :output_format, :uri
@@ -13,7 +15,7 @@ module WebAPI
       @uri.query = URI.encode_www_form query 
     end
 
-    def get_result
+    def get
       Net::HTTP.get(@uri)
     end
 

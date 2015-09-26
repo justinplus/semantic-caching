@@ -4,7 +4,7 @@ $app_id='a057f18208f763ae';
 $privatekey='f2528f_SmartWeatherAPI_d59bd6c';         
 
 //接收参数  
-$type='forecast_f';
+$type='index_f';
 $areaid='101010100';  
 //格式化当前时间yyyyMMddHHmm  
 $date=date('YmdHi', time());  

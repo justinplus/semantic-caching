@@ -18,6 +18,7 @@ uri.query = URI.encode_www_form query
   
 digest = OpenSSL::Digest.new 'sha1'
 hamc = OpenSSL::HMAC.digest(digest, private_key, uri.to_s)
+puts "public_key: #{uri}"
 key = Base64.strict_encode64 hamc
 puts "key: #{key}"
 query[:appid] = appid[0, 6] 

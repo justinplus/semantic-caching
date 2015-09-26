@@ -20,7 +20,7 @@ class BaiduAPI
       end
 
       self.query = query
-      # self.get_result
+      # self.get
     end
 
     def search_near_by
@@ -32,13 +32,13 @@ class BaiduAPI
     def detail(query)
       self.path = '/detail'
       self.query = query
-      # self.get_result
+      # self.get
     end
 
     def event_detail(query)
       self.path = '/eventdetail'
       self.query = query
-      # self.get_result
+      # self.get
     end
 
   end
