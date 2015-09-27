@@ -1,7 +1,7 @@
+require_relative 'constant'
+
 module SemanticCaching
   class Flow
-    Metrics = [:hit_r, :invoke_t, :query_t, :refresh_f]
-
     class Action
       attr_accessor :actor, :succ, :prev
     end
@@ -9,11 +9,12 @@ module SemanticCaching
     class WebAction < Action
       attr_accessor :method, :args
       Metrics.each { |m| attr_accessor m }
+      alias_method :invoke_t, :pure_invoke_t
 
       def initialize(actor, method, args, options=nil)
         @actor, @method, @args = actor, method, args
         if options
-          Metrics.each { |m| self.send "#{m}=", options[m] }
+          Metrics.each { |m| self.send "#{m}=", options[m.to_s] }
         end
       end
 
@@ -23,7 +24,7 @@ module SemanticCaching
       end
   
       def metrics 
-        Hash[ Metrics.map { |m| [m, self.send m] }]
+        Hash[ Metrics.map { |m| [m, self.send(m)] } ]
       end
 
     end

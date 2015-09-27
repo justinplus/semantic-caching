@@ -1,4 +1,4 @@
-require 'web_api/baidu'
-require 'web_api/juhe'
-require 'web_api/open_weather'
+require_relative 'web_api/baidu'
+require_relative 'web_api/juhe'
+require_relative 'web_api/open_weather'
 
