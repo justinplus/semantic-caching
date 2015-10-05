@@ -1,6 +1,7 @@
 require_relative '../web_api'
 require_relative 'flow/action'
 require_relative 'flow/control'
+require_relative 'flow/source.rb'
 require 'yaml'
 require 'active_support/core_ext/object'
 
@@ -29,7 +30,6 @@ module SemanticCaching
     end
 
     alias_method :len, :length
-
 
     def shortest_path # TODO: require testing
       return @shortest_path if @shortest_path
@@ -104,7 +104,6 @@ module SemanticCaching
 
         tt_invoke_t * (1 - hit_r + tt_refresh_f) + hit_r*tt_cache_t
       end
-
     end
 
     def front

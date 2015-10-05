@@ -27,6 +27,20 @@ module WebAPI
       self.query = query
     end
 
+    def index(query)
+      self.query = query
+    end
+
+    def index_f(query)
+      query[:type] = 'index_f'
+      self.query = query
+    end
+
+    def index_v(query)
+      query[:type] = 'index_v'
+      self.query = query
+    end
+
     def query=(query)
       query[:date] ||= Time.now.strftime("%Y%m%d%H%M")
       query[:appid] ||= @appid
