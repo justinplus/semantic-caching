@@ -16,7 +16,12 @@ module WebAPI
     end
 
     def get
-      Net::HTTP.get(@uri)
+      data = Net::HTTP.get(@uri)
+      if block_given?
+        yield data
+      else
+        data
+      end
     end
 
   end

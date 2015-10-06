@@ -2,6 +2,7 @@ require_relative '../web_api'
 require_relative 'flow/action'
 require_relative 'flow/control'
 require_relative 'flow/source.rb'
+require_relative 'flow/baidu_source.rb'
 require 'yaml'
 require 'active_support/core_ext/object'
 
