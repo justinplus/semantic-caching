@@ -1,11 +1,32 @@
 search:
   hit_r: 0.8
-  pure_invoke_t: 20
+  pure_invoke_t: 226
   query_t: 5
   refresh_f: 1
+  data_size: 831
 event:
   hit_r: 0.9
   pure_invoke_t: 30
   query_t: 5
   refresh_f: 1
-
+detail:
+  hit_r: 0.9
+  pure_invoke_t: 389
+  query_t: 5
+  refresh_f: 1
+  data_size: 2870
+event_detail:
+  hit_r: 0.9
+  pure_invoke_t: 30
+  query_t: 5
+  refresh_f: 1
+locate:
+  hit_r: 0.9
+  pure_invoke_t: 30
+  query_t: 5
+  refresh_f: 1
+direct:
+  hit_r: 0.9
+  pure_invoke_t: 30
+  query_t: 5
+  refresh_f: 1

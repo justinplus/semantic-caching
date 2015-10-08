@@ -1,4 +1,6 @@
 -
+  type: Source
+-
   type: WebAction
   actor: baidu
   method: search

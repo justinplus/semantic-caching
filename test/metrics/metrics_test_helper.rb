@@ -10,7 +10,7 @@ module MetricsTestHelper
     out_csv = CSV.open "#{file_name}_#{Time.now.strftime("%Y%m%d%H%M")}.csv", 'w' if file_name
 
     realtime, data = nil, nil
-    total_realtime, total_data_size = 0, 0
+    # total_realtime, total_data_size = 0, 0
 
     times.times do 
       realtime = Benchmark.ms do
@@ -19,8 +19,8 @@ module MetricsTestHelper
 
     data.squish!
 
-    total_realtime += realtime
-    total_data_size += data.size
+    # total_realtime += realtime
+    # total_data_size += data.size
     puts "#{realtime}, #{data.size}"
     # puts data
     out_csv << [ realtime, data.size ] if file_name
@@ -28,7 +28,7 @@ module MetricsTestHelper
     sleep sleep_time
     end
 
-    out_csv << [total_realtime, total_data_size] if file_name
+    # out_csv << [total_realtime, total_data_size] if file_name
   end
 
 end
