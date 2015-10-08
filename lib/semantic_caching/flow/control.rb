@@ -10,15 +10,8 @@ module SemanticCaching
       def initialize(branches)
         @branches = []
         branches.each { |b| @branches << Flow.new(b) }
-        Metrics.each do |m|
-          instance_variable_set "@#{m}", @branches.inject(0){ |s, b| s + b.overhead(b.front, b.back, m) }
-        end
 
-        @invoke_t = @branches.inject(0) do |s, b|
-          b.shortest_path
-          s + b.shortest_dist
-        end
-
+        @refresh_f = @branches.inject(0){ |s, b| s + b.refresh_f } 
       end
 
       def start
@@ -34,7 +27,7 @@ module SemanticCaching
 
       def start
       end
-      
+
     end
 
     class Async

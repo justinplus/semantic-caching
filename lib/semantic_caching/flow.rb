@@ -10,6 +10,7 @@ module SemanticCaching
 
   class Flow
     attr_reader :raw
+    Metrics.each{ |m| attr_reader m }
     def initialize(flow)
       @raw = flow 
       @elems = @raw.map do |e|
@@ -23,6 +24,14 @@ module SemanticCaching
       for i in Range.new(1, len, true)
         @elems[i].prev = @elems[i-1]
       end
+
+      @hit_r = self.first.hit_r
+
+      @query_t = self.first.query_t
+
+      @pure_invoke_t = self.overhead(b.first, b.back, :pure_invoke_t)
+
+      @refresh_f = self.overhead(b.first, b.back, :refresh_f)
 
     end
 
@@ -94,16 +103,15 @@ module SemanticCaching
         sum
       else
         hit_r = from.succ.hit_r
-        tt_invoke_t, tt_refresh_f, tt_cache_t = 0, 0, 0
+        tt_invoke_t, tt_refresh_f, tt_query_t = 0, 0, from.succ.query_t
         loop do
           from = from.succ
           tt_invoke_t += from.try(:cahced_invoke_t) || from.invoke_t
           tt_refresh_f += from.refresh_f
-          tt_cache_t += from.query_t
           break if from == to
         end
 
-        tt_invoke_t * (1 - hit_r + tt_refresh_f) + hit_r*tt_cache_t
+        tt_invoke_t * (1 - hit_r + tt_refresh_f) + hit_r*tt_query_t
       end
     end
 
@@ -116,5 +124,7 @@ module SemanticCaching
     end
 
   end
+
+  
 end
 
