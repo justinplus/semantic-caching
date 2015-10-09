@@ -1,37 +1,55 @@
 -
-  type: Source
--
   type: WebAction
   actor: baidu
   method: search
   description: Get a nearby restaurant
 -
-  type: WebAction
-  actor: baidu
-  method: detail
-  description: Get the details of that restaurant
--
-  type: WebAction
-  actor: baidu
-  method: eventdetail
-  description: Get the Groupon discount info.
--
-  type: WebAction
-  actor: juhe
-  method: weather
-  description: Get the weather in recent hours
--
-  type: fork
+  type: Parallel
   branches:
-      -
-      type: WebAction
-      actor: juhe
-      method: weather
-      description: Get the quility of air
     -
-      type: WebAction
-      actor: baidu
-      method: direct
-      description: Get the routes to the restaurant
--
-  type: join
+      -
+        type: WebAction
+        actor: Baidu
+        method: detail
+        description: get the deatils of that restaurant
+      -
+        type: WebAction
+        actor: Baidu
+        method: eventdetail
+        description: get the eventdetail of that restaurant
+    -
+      -
+        type: WebAction
+        actor: OpenWeather
+        method: forecast_f
+        description: get the forecast
+      -
+        type: WebAction
+        actor: OpenWeather
+        method: index_f
+        description: get the index
+      -
+        type: fork
+        branches:
+          -
+            -
+              type: WebAction
+              actor: Baidu
+              method: search
+              description: find a nearby parking lot
+            -
+              type: WebAction
+              actor: baidu
+              method: direct
+              description: Get the routes to the restaurant
+            -
+              type: WebAction
+              actor: baidu
+              method: direct
+              description: Get the routes to the restaurant
+          -
+            -
+              type: WebAction
+              actor: baidu
+              method: direct
+              description: Get the routes to the restaurant

@@ -1,7 +1,12 @@
+require 'semantic_caching/flow/control'
+
 module SemanticCaching
   class Flow
-    class Parallel
-      def initialize(branches)
+    class Parallel < Fork
+      def initialize(*branches)
+        super 
+        # NOTE: difference of:
+        # super branches
         
         [:pure_invoke_t, :query_t].each do |m|
           instance_variable_set "@#{m}", @branches.map{ |b| b.send m }.max

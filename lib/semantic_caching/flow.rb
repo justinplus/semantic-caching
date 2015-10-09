@@ -1,9 +1,11 @@
 require_relative '../web_api'
 require_relative 'flow/action'
 require_relative 'flow/control'
-require_relative 'flow/source.rb'
-require_relative 'flow/baidu_source.rb'
-require 'yaml'
+require_relative 'flow/source'
+require_relative 'flow/baidu_source'
+require_relative 'flow/parallel'
+require_relative 'flow/exclusive'
+
 require 'active_support/core_ext/object'
 
 module SemanticCaching
@@ -12,65 +14,83 @@ module SemanticCaching
     attr_reader :raw
     Metrics.each{ |m| attr_reader m }
     def initialize(flow)
-      @raw = flow 
-      @elems = @raw.map do |e|
-        Object.const_get("SemanticCaching::Flow::#{e[:type]}").new e[:actor], e[:method], e[:args], e[:metrics]
-      end
       
-      for i in Range.new(0, len-1, true)
+      # TODO: not very secure
+      if flow.first[:actor]
+        @source = nil
+      else
+        @source = Object.const_get("::SemanticCaching::Flow::#{flow.first[:type]}").new
+        flow = flow.drop 1 
+      end
+
+      @elems = flow.map do |e|
+        Object.const_get("::SemanticCaching::Flow::#{e[:type]}").new e[:actor], e[:method], e[:args], e[:metrics]
+      end
+
+      @source.succ = @elems.first if @source
+
+      for i in Range.new(0, length, true)
         @elems[i].succ = @elems[i+1]
       end
 
-      for i in Range.new(1, len, true)
+      for i in Range.new(1, length, true)
         @elems[i].prev = @elems[i-1]
       end
 
-      @hit_r = self.first.hit_r
+      @hit_r = self.front.hit_r
 
-      @query_t = self.first.query_t
+      @query_t = self.front.query_t
 
-      @pure_invoke_t = self.overhead(b.first, b.back, :pure_invoke_t)
+      @pure_invoke_t = self.overhead(front, back, :pure_invoke_t)
 
-      @refresh_f = self.overhead(b.first, b.back, :refresh_f)
+      @refresh_f = self.overhead(front, back, :refresh_f)
 
     end
 
+    # TODO: 
     def length
       @elems.length
     end
 
-    alias_method :len, :length
-
-    def shortest_path # TODO: require testing
+    def shortest_path 
       return @shortest_path if @shortest_path
 
-      mat = Array.new(len) { Array.new(len) }
-      for i in Range.new(0, len , true)
-        for j in Range.new(i+1, len, true)
-          mat[i][j] = overhead(@elems[i], @elems[j])
-          if j - i == 1 && mat[i][j] > @elems[j].invoke_t
-            mat[i][j] = @elems[j].invoke_t
+      # for testing
+      unless @mat
+        len = @elems.length + 1
+
+        @mat = Array.new(len) { Array.new(len) }
+        for i in Range.new(0, len , true)
+          for j in Range.new(i+1, len, true)
+            overhead(@elems[2], @elems[2])
+            @mat[i][j] = overhead(@elems[i], @elems[j-1])
+            if j - i == 1 && @mat[i][j] > @elems[i].invoke_t
+              @mat[i][j] = @elems[i].invoke_t
+            end
           end
         end
       end
 
-      puts mat.inspect
+      len = @mat.size
 
-      dist = mat[0].zip([]) # integer is immuable in ruby
+      dist = @mat[0].zip([]) # integer is immuable in ruby
       dist.first[1] = 1
       path = [0]
 
-      (len-1).times do # TODO len or len-1 
+      (len-1).times do # TODO len or len-1
         min = dist.each_with_index.reject{ |(dist, mark), index| mark == 1 }.min.last
         dist[min][1] = 1
+
+        puts dist.inspect
         # puts "the index of min: #{min}"
 
+        # TODO: wrong
         path << min
         break if min == len-1
 
         for i in Range.new(1, len, true)
-          if !dist[i].last && !mat[min][i].nil? && dist[i].first > dist[min].first + mat[min][i]
-            dist[i][0] = dist[min].first + mat[min][i]
+          if !dist[i].last && !@mat[min][i].nil? && dist[i].first > dist[min].first + @mat[min][i]
+            dist[i][0] = dist[min].first + @mat[min][i]
           end
         end
 
@@ -80,7 +100,7 @@ module SemanticCaching
       @shortest_path = path
     end
 
-    def shortest_dist 
+    def shortest_dist
       return @shortest_dist if @shortest_dist
       self.shortest_path
       @shortest_dist
@@ -96,19 +116,19 @@ module SemanticCaching
       if metric
         sum = 0
         loop do
-          from = from.succ
-          sum += from.send metric 
+          sum += from.send metric
           break if from == to
+          from = from.succ
         end
         sum
       else
-        hit_r = from.succ.hit_r
-        tt_invoke_t, tt_refresh_f, tt_query_t = 0, 0, from.succ.query_t
+        hit_r, tt_query_t = from.hit_r, from.query_t
+        tt_invoke_t, tt_refresh_f= 0, 0
         loop do
-          from = from.succ
           tt_invoke_t += from.try(:cahced_invoke_t) || from.invoke_t
           tt_refresh_f += from.refresh_f
           break if from == to
+          from = from.succ
         end
 
         tt_invoke_t * (1 - hit_r + tt_refresh_f) + hit_r*tt_query_t
@@ -124,7 +144,4 @@ module SemanticCaching
     end
 
   end
-
-  
 end
-

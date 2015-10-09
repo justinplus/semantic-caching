@@ -7,7 +7,7 @@ module SemanticCaching
       Metrics.each{ |m| attr_reader m }
       attr_reader :invoke_t
 
-      def initialize(branches)
+      def initialize(*branches)
         @branches = []
         branches.each { |b| @branches << Flow.new(b) }
 

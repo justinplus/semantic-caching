@@ -1,18 +1,15 @@
 require_relative 'test_helper'
 require 'semantic_caching/flow'
 
-class TestFork < Minitest::Test
-  include TestHelper
+require_relative 'flow_test_cases'
 
-  def setup
-    get_data
-  end
+class ForkTest < Minitest::Test
+  include FlowTestCases
 
-  def test_new
-    fork = SemanticCaching::Flow::Fork.new [@flow, @flow] 
-    assert_equal 20+30+20+30, fork.pure_invoke_t
-    assert_in_delta 20+30+20+30, fork.invoke_t
+  def test_refresh_f
+    fork = SemanticCaching::Flow::Fork.new BaiduFlow, WeatherFlow
+
+    assert_equal [BaiduFlow, WeatherFlow].inject(0){ |s, flow| s + flow.inject(0){ |s, act| s + act[:metrics]['refresh_f'] } }, fork.refresh_f
   end
 
 end
-
