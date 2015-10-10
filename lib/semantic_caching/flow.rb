@@ -14,13 +14,13 @@ module SemanticCaching
     attr_reader :raw
     Metrics.each{ |m| attr_reader m }
     def initialize(flow)
-      
+
       # TODO: not very secure
       if flow.first[:actor]
         @source = nil
       else
         @source = Object.const_get("::SemanticCaching::Flow::#{flow.first[:type]}").new
-        flow = flow.drop 1 
+        flow = flow.drop 1
       end
 
       @elems = flow.map do |e|
@@ -47,12 +47,12 @@ module SemanticCaching
 
     end
 
-    # TODO: 
+    # TODO:
     def length
       @elems.length
     end
 
-    def shortest_path 
+    def shortest_path
       return @shortest_path if @shortest_path
 
       # for testing
@@ -75,29 +75,32 @@ module SemanticCaching
 
       dist = @mat[0].zip([]) # integer is immuable in ruby
       dist.first[1] = 1
-      path = [0]
+      path = @mat[0].map{ |e| e.nil? ? nil : 0 }
+      path[0] = nil
 
-      (len-1).times do # TODO len or len-1
-        min = dist.each_with_index.reject{ |(dist, mark), index| mark == 1 }.min.last
+      (len-1).times do
+        min = dist.each_with_index.reject{ |(dist, mark), index| mark == 1 || dist.nil? }.min.last
         dist[min][1] = 1
 
         puts dist.inspect
-        # puts "the index of min: #{min}"
 
-        # TODO: wrong
-        path << min
         break if min == len-1
 
         for i in Range.new(1, len, true)
-          if !dist[i].last && !@mat[min][i].nil? && dist[i].first > dist[min].first + @mat[min][i]
+          if !dist[i].last && !@mat[min][i].nil? && (dist[i].first.nil? || dist[i].first > dist[min].first + @mat[min][i] )
             dist[i][0] = dist[min].first + @mat[min][i]
+            path[i] = min
           end
         end
 
       end
 
+      @shortest_path = [len-1]
+      while path[@shortest_path.first]
+        @shortest_path.unshift( path[@shortest_path.first] )
+      end
+
       @shortest_dist = dist.last.first
-      @shortest_path = path
     end
 
     def shortest_dist

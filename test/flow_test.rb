@@ -46,7 +46,21 @@ class FlowTest < Minitest::Test
     end
 
     assert_equal 5, @baidu_flow.shortest_dist
-    assert_equal [0,1,3], @baidu_flow.shortest_path
+    assert_equal [0,2,3], @baidu_flow.shortest_path
+
+    @weather_flow.instance_eval do
+      @mat = [
+        [ 0, 6, 3, nil, nil, nil ],
+        [ 6, 0, 2, 5, nil, nil ],
+        [ 3, 2, 0, 3, 4, nil ],
+        [ nil, 5, 3, 0, 2, 3 ],
+        [ nil, nil, 4, 2, 0, 5 ],
+        [ nil, nil, nil, 3, 5, 0 ]
+      ]
+    end
+
+    assert_equal 9, @weather_flow.shortest_dist
+    assert_equal [0,2,3,5], @weather_flow.shortest_path
   end
 
 end
