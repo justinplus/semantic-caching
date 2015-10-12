@@ -10,12 +10,12 @@ module SemanticCaching
       @@long_range = Range.new 121.36, 121.58 
       @@lat_range = Range.new 31.14, 31.345
 
-      @@tags = YAML.load_file "#{DataPath}/tags_baidu.yml"
+      @@tags = YAML.load_file "#{DataRoot}/tags_baidu.yml"
       @@tags_l1 = @@tags.keys
       @@tags_l2 = @@tags.each.each_with_object([]) { |(_, val), res| res << val.keys unless val.nil? }.flatten
 
-      @@res_uid = CSV.read "#{DataPath}/baidu_restaurant_uid.csv"
-      @@uid = CSV.read "#{DataPath}/baidu_uid.csv"
+      @@res_uid = CSV.read "#{DataRoot}/baidu_restaurant_uid.csv"
+      @@uid = CSV.read "#{DataRoot}/baidu_uid.csv"
 
       def next_loc
         long = (rand * (@@long_range.last - @@long_range.first)) + @@long_range.first

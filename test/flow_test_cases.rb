@@ -1,9 +1,10 @@
 require 'yaml'
+require 'path_constant'
 
 module FlowTestCases
 
-  BaiduMetrics = YAML.load_file '../data/metrics_baidu.yml'
-  OpenWeatherMetrics = YAML.load_file '../data/metrics_open_weather.yml'
+  BaiduMetrics = YAML.load_file "#{SemanticCaching::DataRoot}/metrics_baidu.yml"
+  OpenWeatherMetrics = YAML.load_file "#{SemanticCaching::DataRoot}/metrics_open_weather.yml"
 
   BaiduFlow = [
     {
