@@ -1,1 +1,3 @@
 *.swp
+
+test/metrics/data/*.csv
