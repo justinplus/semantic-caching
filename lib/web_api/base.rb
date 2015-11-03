@@ -11,8 +11,7 @@ module WebAPI
     def query= (query)
       @uri.path = @path 
       @query ||= {}
-      query = @query.merge query
-      @uri.query = URI.encode_www_form query 
+      @uri.query = URI.encode_www_form @query.merge(query)
     end
 
     def get

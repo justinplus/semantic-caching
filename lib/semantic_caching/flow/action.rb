@@ -18,8 +18,8 @@ module SemanticCaching
         end
       end
 
-      def start
-        @actor.send @method, @args
+      def start(args = @args)
+        @actor.send @method, args
         @actor.get
       end
   

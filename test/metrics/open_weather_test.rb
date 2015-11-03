@@ -1,37 +1,6 @@
 require_relative 'metrics_test_helper'
 
-module SemanticCaching
-  class Flow
-    class OpenWeatherSource < Source
-      @@table_f = CSV.table '../../data/area_id_f.csv'
-      @@table_v = CSV.table '../../data/area_id_v.csv'
-
-      def initialize
-        @cur_row_f = -1
-        @cur_row_v = -1
-      end
-
-      def next_f(random = false)
-        if random
-          @@table_f[rand(@@table_f.size)]
-        else
-          @cur_row_f = (@cur_row_f+1) % @@table_f.size
-          @@table_f[@cur_row_f]
-        end
-      end
-
-      def next_v(random = false)
-        if random
-          @@table_v[rand(@@table_v.size)]
-        else
-          @cur_row_v = (@cur_row_v+1) % @@table_v.size
-          @@table_v[@cur_row_v]
-        end
-      end
-
-    end
-  end
-end
+require 'semantic_caching/flow/open_weather_source'
 
 class OpenWeatherMetricsTest < Minitest::Test
   def setup

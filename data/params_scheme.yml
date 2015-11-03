@@ -1,0 +1,4 @@
+open_weather:
+  areaid:
+    equal: ==
+    contains: ==
