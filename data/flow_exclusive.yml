@@ -1,0 +1,55 @@
+type: Exclusive
+condition: [
+]
+prob:
+branches:
+  -
+    -
+      type: WebAction
+      actor: Baidu
+      method: search
+      input:
+        lng: [ origin, lng ]
+        lat: [ origin, lat ]
+        q: '停车场'
+        radius: [ query, radius ]
+      output:
+        parking_lot: [ results, 0 ]
+      description: find a nearby parking lot
+    -
+      type: WebAction
+      actor: Baidu
+      method: direct
+      input: 
+        org_lng: [ origin, lng ]
+        org_lat: [ origin, lat ]
+        dest_lng: [ parking_lot, location, lng ]
+        dest_lat: [ parking_lot, location, lat ]
+      output:
+        direct_to_park: [ result ]
+      description: Get the routes to the restaurant
+    -
+      type: WebAction
+      actor: Baidu
+      method: direct
+      input: 
+        org_lng: [ parking_lot, location, lng ]
+        org_lat: [ parking_lot, location, lat ]
+        dest_lng: [ hotel, location, lng ]
+        dest_lat: [ hotel, location, lat ]
+      output:
+        direct_to_hotel: [ result ]
+      description: Get the routes to the restaurant
+  -
+    -
+      type: WebAction
+      actor: Baidu
+      method: direct
+      input: 
+        org_lng: [ origin, lng ]
+        org_lat: [ origin, lat ]
+        dest_lng: [ hotel, location, lng ]
+        dest_lat: [ hotel, location, lat ]
+      output:
+        direction: [ result ]
+      description: Get the routes to the restaurant

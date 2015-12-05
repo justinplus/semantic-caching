@@ -1,4 +1,4 @@
-require_relative 'base'
+require 'web_api/base'
 require 'openssl'
 require 'base64'
 

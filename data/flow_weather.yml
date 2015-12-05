@@ -1,0 +1,41 @@
+-
+  type: WebAction
+  actor: Baidu
+  method: locate
+  input:
+    lat: [ origin, lat ]
+    lng: [ origin, lng ]
+  output: 
+    area_addr: [ result, addressComponent ]
+  description: get the addr component of origin
+-
+  type: WebAction
+  actor: Convert
+  method: open_weather
+  input:
+    name_cn: [ area_addr, district ]
+    prov_cn: [ area_addr, province ]
+  output:
+    area: [ results, 0 ]
+  description: convert address to area_id
+# forecast and index can run parallel
+-
+  type: WebAction
+  actor: OpenWeather
+  method: forecast_f
+  input:
+    areaid: [ area, id ]
+  output:
+    cur_weather: [c]
+    forecast: [f]
+  description: get the forecast
+-
+  type: WebAction
+  actor: OpenWeather
+  input:
+    areaid: [ area, id ]
+  output:
+    index: [ i ]
+  method: index_f
+  description: get the index
+

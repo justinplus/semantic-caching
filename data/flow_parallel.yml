@@ -1,0 +1,27 @@
+type: Parallel
+branches:
+  -
+    -
+      type: WebAction
+      actor: Baidu
+      method: search
+      input:
+        lng: [ origin, lng ]
+        lat: [ origin, lat ]
+        q: [ query, q ]
+        radius: [ query, radius ]
+      output:
+        hotel: [ results, 0 ]
+      description: Get a nearby restaurant
+  -
+    -
+      type: WebAction
+      actor: OpenWeather
+      method: forecast_f
+      input:
+        areaid: [area_id]
+      output:
+        cur_weather: c
+        forecast: f
+      description: get the forecast
+

@@ -1,55 +1,65 @@
-require_relative '../web_api'
-require_relative 'flow/action'
-require_relative 'flow/control'
-require_relative 'flow/source'
-require_relative 'flow/baidu_source'
-require_relative 'flow/parallel'
-require_relative 'flow/exclusive'
+require 'web_api'
+require 'service_flow/action'
+require 'service_flow/control'
+require 'service_flow/source'
+require 'service_flow/parallel'
+require 'service_flow/exclusive'
 
 require 'active_support/core_ext/object'
 
-module SemanticCaching
-
+module ServiceFlow
   class Flow
     attr_reader :raw
     Metrics.each{ |m| attr_reader m }
     def initialize(flow)
 
       # TODO: not very secure
-      if flow.first[:actor]
+      if flow.first['actor']
         @source = nil
       else
-        @source = Object.const_get("::SemanticCaching::Flow::#{flow.first[:type]}").new
+        @source = Object.const_get("::ServiceFlow::#{flow.first['type']}").new
         flow = flow.drop 1
       end
 
-      @elems = flow.map do |e|
-        Object.const_get("::SemanticCaching::Flow::#{e[:type]}").new e[:actor], e[:method], e[:args], e[:metrics]
+      @actions = flow.map do |action|
+        Object.const_get("::ServiceFlow::#{action['type']}").new action
       end
 
-      @source.succ = @elems.first if @source
+      @source.succ = @actions.first if @source
 
-      for i in Range.new(0, length, true)
-        @elems[i].succ = @elems[i+1]
+      @actions.each_with_index do |action, index|
+        action.succ = @actions[index+1] if index != @actions.length
+        action.prev = @actions[index-1] if index != 0
       end
 
-      for i in Range.new(1, length, true)
-        @elems[i].prev = @elems[i-1]
+      # @hit_r = self.front.hit_r
+
+      # @query_t = self.front.query_t
+
+      # @pure_invoke_t = self.overhead(front, back, :pure_invoke_t)
+
+      # @refresh_f = self.overhead(front, back, :refresh_f)
+
+    end
+
+    def start(msg)
+      msg ||= @source.gen_msg
+
+      @actions.each do |action|
+        msg.merge! action.start(msg)
+        puts msg
       end
 
-      @hit_r = self.front.hit_r
+      msg
+    end
 
-      @query_t = self.front.query_t
-
-      @pure_invoke_t = self.overhead(front, back, :pure_invoke_t)
-
-      @refresh_f = self.overhead(front, back, :refresh_f)
-
+    def log
+      @actions.map{ |action| action.log }
     end
 
     # TODO:
     def length
-      @elems.length
+      @actions.length
     end
 
     def shortest_path
@@ -57,15 +67,15 @@ module SemanticCaching
 
       # for testing
       unless @mat
-        len = @elems.length + 1
+        len = @actions.length + 1
 
         @mat = Array.new(len) { Array.new(len) }
         for i in Range.new(0, len , true)
           for j in Range.new(i+1, len, true)
-            overhead(@elems[2], @elems[2])
-            @mat[i][j] = overhead(@elems[i], @elems[j-1])
-            if j - i == 1 && @mat[i][j] > @elems[i].invoke_t
-              @mat[i][j] = @elems[i].invoke_t
+            overhead(@actions[2], @actions[2])
+            @mat[i][j] = overhead(@actions[i], @actions[j-1])
+            if j - i == 1 && @mat[i][j] > @actions[i].invoke_t
+              @mat[i][j] = @actions[i].invoke_t
             end
           end
         end
@@ -139,11 +149,11 @@ module SemanticCaching
     end
 
     def front
-      @elems.first
+      @actions.first
     end
 
     def back
-      @elems.last
+      @actions.last
     end
 
     private

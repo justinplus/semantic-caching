@@ -1,0 +1,31 @@
+-
+  type: WebAction
+  actor: Baidu
+  method: search
+  input:
+    lng: [ origin, lng ]
+    lat: [ origin, lat ]
+    q: [ query, q ]
+    radius: [ query, radius ]
+  output:
+    hotel: [ results, 0 ]
+  description: Get a nearby restaurant
+-  
+  type: WebAction
+  actor: Baidu
+  method: detail
+  input: 
+    uid: [ hotel, uid ]
+  output:
+    detail: [ result, detail_info ]
+  description: get the deatils of that restaurant
+-
+  type: WebAction
+  actor: Baidu
+  method: event_detail
+  input:
+    uid: [ hotel, uid]
+  output:
+    events: [ result, events ]
+  description: get the events of that restaurant
+

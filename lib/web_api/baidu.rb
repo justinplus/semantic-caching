@@ -28,6 +28,7 @@ module WebAPI
 
     def detail(query)
       @path = '/place/v2/detail'
+      query['scope'] = 2
       self.query = query
     end
 
@@ -37,13 +38,29 @@ module WebAPI
     end
 
     def locate(query)
+      lat, lng = query.delete('org_lat'),query.delete('org_lng')
+      query['location'] = "#{lat},#{lng}"
       @path = '/geocoder/v2/' 
       self.query = query
     end
 
     def direct(query)
+      lat, lng = query.delete('org_lat'),query.delete('org_lng')
+      query['origin'] = "#{lat},#{lng}"
+      lat, lng = query.delete('dest_lat'),query.delete('dest_lng')
+      query['destination'] = "#{lat},#{lng}"
+      # Naive assumption
+      query['region'] = query['origin_region'] = query['destination_region'] = '上海'
+
       @path = '/direction/v1'
       self.query = query
+    end
+
+    def query=(query)
+      lat = query.delete 'lat'
+      lng = query.delete 'lng'
+      query['location'] = "#{lat},#{lng}" if lat && lng
+      super
     end
 
   end
