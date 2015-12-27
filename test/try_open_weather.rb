@@ -8,10 +8,10 @@ private_key = 'f2528f_SmartWeatherAPI_d59bd6c'
 uri = URI 'http://open.weather.com.cn/data/'
 
 query = {
-  type: 'forecast_f',
+  type: 'forecast_v',
   date: Time.now.strftime("%Y%m%d%H%M"),
   appid: appid,
-  areaid: 101010100
+  areaid: 101021000
 }
 
 uri.query = URI.encode_www_form query

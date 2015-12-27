@@ -26,7 +26,7 @@
   input:
     areaid: [ area, id ]
   output:
-    cur_weather: [c]
+    weather: [c]
     forecast: [f]
   description: get the forecast
 -

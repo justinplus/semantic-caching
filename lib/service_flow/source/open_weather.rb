@@ -5,6 +5,8 @@ require 'csv'
 
 module ServiceFlow
   class OpenWeatherSource < Source
+    include PathConstant
+
     @@table = [(CSV.table DataRoot.join('area_id_f.csv')),
                (CSV.table DataRoot.join('area_id_v.csv'))]
 

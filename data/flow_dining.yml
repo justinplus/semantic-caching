@@ -1,10 +1,13 @@
+- type: BaiduSource
+  # init_args: [121.297198, 31.209686, 121.489795, 31.074682]
+  init_args: [121.397198, 31.209686, 121.409795, 31.174682, 3]
 -
   type: WebAction
   actor: Baidu
   method: search
   input:
-    lng: [ origin, lng ]
-    lat: [ origin, lat ]
+    lng: { map: [ origin, lng ], post: [round, 3] }
+    lat: { map: [ origin, lat ], post: [round, 3] }
     q: [ query, q ]
     radius: [ query, radius ]
   output:
@@ -38,8 +41,8 @@
         actor: Baidu
         method: locate
         input:
-          lat: [ origin, lat ]
-          lng: [ origin, lng ]
+          lat: { map: [ origin, lat ], post: [round, 3] }
+          lng: { map: [ origin, lng ], post: [round, 3] }
         output: 
           area_addr: [ result, addressComponent ]
         description: get the addr component of origin
@@ -54,28 +57,35 @@
           area: [ results, 0 ]
         description: convert address to area_id
       # forecast and index can run parallel
-      -
-        type: WebAction
-        actor: OpenWeather
-        method: forecast_f
-        input:
-          areaid: [ area, id ]
-        output:
-          cur_weather: [c]
-          forecast: [f]
-        description: get the forecast
-      -
-        type: WebAction
-        actor: OpenWeather
-        input:
-          areaid: [ area, id ]
-        output:
-          index: [ i ]
-        method: index_f
-        description: get the index
+      - 
+        type: Parallel
+        branches:
+          -
+            - 
+              type: WebAction
+              actor: OpenWeather
+              input:
+                areaid: [ area, id ]
+              output:
+                index: [ i ]
+              method: index_v
+              description: get the index
+          -  
+            -
+              type: WebAction
+              actor: OpenWeather
+              method: forecast_v
+              input:
+                areaid: [ area, id ]
+              output:
+                weather: [c]
+                forecast: [f]
+              description: get the forecast
       -
         type: Exclusive
         condition: 
+          - [ [ weather, forecast, f1, fa ], <=, 2, 0 ]
+          - [ [ weather, forecast, f1, fb ], <=, 2, 0 ]
         prob:
         branches:
           -
@@ -85,8 +95,8 @@
               method: search
               input:
                 # location of origin or destination
-                lng: [ origin, lng ]
-                lat: [ origin, lat ]
+                lng: { map: [ origin, lng ], post: [round, 3] }
+                lat: { map: [ origin, lat ], post: [round, 3] }
                 q: '停车场'
                 radius: [ query, radius ]
               output:
@@ -97,10 +107,10 @@
               actor: Baidu
               method: direct
               input: 
-                org_lng: [ origin, lng ]
-                org_lat: [ origin, lat ]
-                dest_lng: [ parking_lot, location, lng ]
-                dest_lat: [ parking_lot, location, lat ]
+                org_lng: { map: [ origin, lng ], post: [round, 3] }
+                org_lat: { map: [ origin, lat ], post: [round, 3] }
+                dest_lng: { map: [ parking_lot, location, lng ], post: [round, 3] }
+                dest_lat: { map: [ parking_lot, location, lat ], post: [round, 3] }
               output:
                 direct_to_park: [ result ]
               description: Get the routes to the restaurant
@@ -109,10 +119,10 @@
               actor: Baidu
               method: direct
               input: 
-                org_lng: [ parking_lot, location, lng ]
-                org_lat: [ parking_lot, location, lat ]
-                dest_lng: [ hotel, location, lng ]
-                dest_lat: [ hotel, location, lat ]
+                org_lng: { map: [ parking_lot, location, lng ], post: [round, 3] }
+                org_lat: { map: [ parking_lot, location, lat ], post: [round, 3] }
+                dest_lng: { map: [ hotel, location, lng ], post: [round, 3] }
+                dest_lat: { map: [ hotel, location, lat ], post: [round, 3] }
               output:
                 direct_to_hotel: [ result ]
               description: Get the routes to the restaurant
@@ -122,10 +132,11 @@
               actor: Baidu
               method: direct
               input: 
-                org_lng: [ origin, lng ]
-                org_lat: [ origin, lat ]
-                dest_lng: [ hotel, location, lng ]
-                dest_lat: [ hotel, location, lat ]
+                org_lng: { map: [ origin, lng ], post: [round, 3] }
+                org_lat: { map: [ origin, lat ], post: [round, 3] }
+                dest_lng: { map: [ hotel, location, lng ], post: [round, 3] }
+                dest_lat: { map: [ hotel, location, lat ], post: [round, 3] }
+                mode: transit
               output:
                 direction: [ result ]
               description: Get the routes to the restaurant

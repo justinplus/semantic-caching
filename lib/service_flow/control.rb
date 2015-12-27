@@ -1,36 +1,65 @@
-require_relative 'constant'
+require 'service_flow/metrics'
+require 'service_flow/helper'
 
 module ServiceFlow
   class Fork
+    include Metrics
+    
     attr_accessor :prev, :succ, :branches
-    Metrics.each{ |m| attr_reader m }
-    attr_reader :invoke_t
 
-    def initialize(branches)
+    def initialize(branches, cache_mode = nil)
       @branches = []
-      branches.each { |b| @branches << Flow.new(b) }
+      branches.each { |b| @branches << Flow.new(b, cache_mode) }
 
-      # @refresh_f = @branches.inject(0){ |s, b| s + b.refresh_f } 
+      @log = []
+
     end
 
-    def start
-      @branches.each do |b|
-        b.start
+    def start(msg)
+      res = nil
+      lapse = Benchmark.ms do
+        res = _start(msg)
+      end
+      @log << lapse
+      res
+    end
+
+    def log(scope = nil)
+      log = @branches.map{ |b| b.log(scope) } 
+      log.unshift (scope.nil? || scope == :raw) ?  @log : Helper.cnt_sum_avg(@log)
+    end 
+    
+    def cache_log(scope)
+      @branches.map{ |b| b.cache_log(scope) }
+    end
+
+    [ 'hit_rate', 'query_time', 'caching_time' ].each do |m|
+      define_method m do
+        branches.inject(0) { |sum, br| sum + br.public_send(m) } / branches.size
       end
     end
 
-  end
+    def valid_rate
+      branches.inject(1) { |prod, n| prod * n.valid_rate }
+    end
 
-  class Join
-    attr_accessor :prev, :succ
+    def invalid_rate
+      1 - valid_rate
+    end
 
-    def start
+    def caching_cost
+      # TODO:
+      branches.map{ |br| br.caching_cost }.max
+    end
+
+    def invoking_time
+      branches.map{ |br| br.invoking_time }.max
+    end
+
+    def split_scheme
+      branches.map{ |br| br.split_scheme }
     end
 
   end
-
-  class Async
-  end
-
 end
 

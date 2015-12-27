@@ -5,35 +5,43 @@ require 'yaml'
 
 require 'path_constant'
 
-module SemanticCache
+module Cache
   module Caching
 
-    def get(params)
+    def cached_get(params, log = true)
+      desc, status = nil, nil
 
-      descriptor, extra = nil, nil
-
-      elapse = Benchmark.ms do
-        descriptor, status= cache.get params 
+      # time cost of cache query
+      query_elapse = Benchmark.ms do
+        desc, status= cache.get params_to_key(params)
       end
 
-      log(status, elapse)
+      status ||= :equal
+
+      trans_elapse, miss_elapse = 0, 0
 
       case status
       when :equal
-        data = descriptor.content
+        data = desc.content
       when :contain
-        data = descriptor.filter status
+        data = desc.filter status
       when :miss
+        # time cost of transmission when cache missed
         trans_elapse = Benchmark.ms do
-          data = action.start(params)
+          data = actions.start(params)
         end
+        # time cost of set cache
         miss_elapse = Benchmark.ms do
-          cache.set params, data
+          cache.set params_to_key(params), data
         end
-        puts "get miss"
-        log(:trans, trans_elapse)
-        log(:miss_add, miss_elapse)
       end
+
+      cache_log << [status, query_elapse, trans_elapse, miss_elapse] if log
+
+    end
+
+    def params_to_key
+      params_scheme.map { |p| params[p['name']] }.join(':')
     end
 
     def log(item, mtime)
@@ -47,7 +55,7 @@ module SemanticCache
       end
     end
 
-    def inspect
+    def statistic
       statistic.each do |item, t_arr|
         puts <<-STR
 #{item}: ------

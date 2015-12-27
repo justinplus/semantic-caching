@@ -2,7 +2,7 @@ require_relative 'control'
 
 module ServiceFlow
   class Exclusive < Fork
-    def initialize(branches_or_options, cond = nil, prob = nil) 
+    def initialize(branches_or_options, cache_mode = nil) 
       branches, @cond, @prob = case branches_or_options
                                when Hash
                                  branches_or_options.values_at 'branches', 'condition', 'probabilities'
@@ -10,7 +10,7 @@ module ServiceFlow
                                  [branches_or_options, cond, prob]
                                end
 
-      super branches
+      super branches, cache_mode
 
       # raise ArgumentError unless prob.inject(:+) == 1;
       # @prob = prob
@@ -25,12 +25,12 @@ module ServiceFlow
       # end
     end
 
-    def start(msg)
+    def _start(msg)
       msg.merge! choose_branch(msg).start(msg)
     end
 
     def choose_branch(msg)
-      @branches[0]
+      @branches[rand(2)]
     end
 
   end

@@ -2,7 +2,7 @@ require 'service_flow/control'
 
 module ServiceFlow
   class Parallel < Fork
-    def initialize(branches_or_options)
+    def initialize(branches_or_options, cache_mode = nil)
       # puts branches_or_options
       branches = case branches_or_options
                  when Hash
@@ -10,7 +10,7 @@ module ServiceFlow
                  else
                    branches_or_options
                  end
-      super branches
+      super branches, cache_mode
       # NOTE: difference of:
       # super branches
 
@@ -24,7 +24,7 @@ module ServiceFlow
       # @invoke_t = @branches.map{ |b| b.shortest_path }.max
     end
 
-    def start(msg)
+    def _start(msg)
       threads = []
 
       @branches.each do |br|

@@ -1,4 +1,65 @@
-open_weather:
-  areaid:
-    equal: ==
-    contains: ==
+OpenWeather:
+  forecast_v: 
+    - &area_id
+      name: areaid
+      type: String
+      operator: ==
+  index_v:
+    - *area_id
+
+Baidu:
+  lng_lat: 
+    - &lng
+      name: lng
+      type: Float
+      operator: ==
+    - &lat
+      name: lat
+      type: Float
+      operator: ==
+
+  search:
+    - *lng
+    - *lat
+    -
+      name: radius
+      type: Fixnum
+      operator: ==
+  detail: 
+    - &baidu_uid
+      name: uid
+      type: String
+      operator: ==
+  event_detail:
+    - *baidu_uid
+  locate:
+    - *lng
+    - *lat
+  direct:
+    -
+      name: org_lng
+      type: Float
+      operator: ==
+    -
+      name: org_lat
+      type: Float
+      operator: ==
+    -
+      name: dest_lng
+      type: Float
+      operator: ==
+    -
+      name: dest_lat
+      type: Float
+      operator: ==
+
+Convert:
+  open_weather:
+    -
+      name: name_cn
+      type: String
+      operator: ==
+    -
+      name: prov_cn
+      type: String
+      operator: ==
