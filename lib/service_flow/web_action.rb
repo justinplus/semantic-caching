@@ -12,7 +12,7 @@ module ServiceFlow
     include Helper
 
     attr_accessor :actor, :method, :params
-    attr_reader :input
+    attr_reader :input, :output
 
     # alias_method :invoke_t, :pure_invoke_t
 
@@ -62,8 +62,18 @@ module ServiceFlow
       end
     end
 
-    def metrics 
-      # Hash[ Metrics.map { |m| [m, self.send(m)] } ]
+    BASIC_METRIC_NAMES.each do |m|
+      define_method m do
+        METRICS[actor.class.to_s.split('::').last][method][m]
+      end
+    end
+
+    def valid_rate
+      1 - refresh_freq.to_f / invoking_freq
+    end
+
+    def invalid_rate
+      refresh_freq.to_f / invoking_freq
     end
 
   end

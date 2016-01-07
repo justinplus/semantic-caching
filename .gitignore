@@ -1,4 +1,5 @@
 *.swp
+*.tar.gz
 
 test/metrics/data/*.csv
 test/data/*

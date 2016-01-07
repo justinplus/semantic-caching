@@ -25,9 +25,9 @@ module Cache
     end
 
     def inspect
-      puts <<-inspect
+      <<-inspect
 ====
-Size: #{@elems.size}
+Size: #{size}
 ====
 Elems: #{@elems}
 ====

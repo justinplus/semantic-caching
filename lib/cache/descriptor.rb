@@ -1,10 +1,10 @@
 module Cache
   class Descriptor
     attr_reader :params
-    attr_accessor :content, :ttl
+    attr_accessor :content, :lru_time
 
-    def initialize(params, content, ttl)
-      @params, @content, @ttl = params, content, ttl
+    def initialize(params, content, lru_time)
+      @params, @content, @lru_time = params, content, lru_time
     end
 
     def valid?
@@ -15,7 +15,7 @@ module Cache
     end
 
     def to_json
-      {params: @params, content: @content, ttl: @ttl}.to_json
+      {params: @params, content: @content, lru_time: @lru_time}.to_json
     end
 
     # def to_key(params_scheme)

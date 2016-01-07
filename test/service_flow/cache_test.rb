@@ -13,20 +13,27 @@ class CacheTest < Minitest::Test
     @params_scheme = YAML.load_file(DataRoot.join('params_scheme.yml'))
   end
 
-  def ntest_cache
+  def test_cache
     action = ::ServiceFlow::WebAction.new YAML.load_file(DataRoot.join('flow_weather.yml'))[2]
-    cache = ::ServiceFlow::Cache.new action, ::Cache::LRU.new(100), @params_scheme['OpenWeather']['forecast_v']
+    cache = ::ServiceFlow::Cache.new action, ::Cache::LRUInBytes.new(1000), @params_scheme['OpenWeather']['forecast_v']
     source = ::ServiceFlow::OpenWeatherSource.new
-    100.times do
+
+    0.times do
       cache.start( { 'area' => { 'id' => source.next_f(:uni)[0] } } )
     end
 
+    6.times do
+      cache.start( { 'area' => { 'id' => 101260301 } } )
+      puts cache.lru_clock
+      puts cache.inspect
+    end
+
     puts cache.cache_log
-    puts cache.inspect
+    # puts cache.inspect
 
   end
 
-  def test_naive_semantic_cache
+  def ntest_naive_semantic_cache
     action = ::ServiceFlow::WebAction.new YAML.load_file(DataRoot.join('flow_dining.yml'))[1]
     cache = ::ServiceFlow::Cache.new action, ::Cache::NaiveSemanticLRU.new(100), @params_scheme['Baidu']['search']
 
@@ -47,5 +54,6 @@ class CacheTest < Minitest::Test
     source = ::ServiceFlow::BaiduSource.new *[121.397198, 31.209686, 121.409795, 31.174682], 4
     1000.times {puts source.gen_msg(:normal).inspect}
   end
+
 
 end

@@ -1,7 +1,7 @@
 module ServiceFlow
 
   class Action
-    attr_accessor :succ, :prev
+    attr_accessor :prev, :succ
     attr_reader :log
 
     def initialize(prev, succ)

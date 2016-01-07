@@ -40,6 +40,59 @@ module ServiceFlow
         _from = _from.succ
       end
     end
+
+    def caching_cost
+      return nil unless valid_data_dependency?
+      super
+    end
+
+    def valid_data_dependency?
+      _from = from.succ
+      return true if _from == to
+
+      msg = {}
+      _from.input.each_value do |val|
+        case val
+        when Hash
+          msg[val['map'].first] = nil 
+        when Array
+          msg[val.first] = nil 
+        end
+      end
+
+      _from.output.each_key{ |key| msg[key] = nil } if _from.respond_to? :output
+
+      flow = []
+      loop do 
+        flow << _from
+        break if _from == to
+        _from = _from.succ
+      end
+
+      _valid_data_dependency? flow, msg
+    end
+
+    def _valid_data_dependency?(flow, msg)
+      flow.each do |action|
+        puts msg.inspect
+        case action
+        when Exclusive, Parallel
+          action.branches.each do |br|
+            return false unless _valid_data_dependency?(br.actions, msg)
+          end
+        else
+          action.input.each_value do |val| 
+            # puts msg.has_key?( val.first[1][0] )
+            return false if val.respond_to?(:first) && !msg.has_key?(val.first.respond_to?(:first) ? val.first[1][0] : val.first)
+          end
+          action.output.each_key do |key|
+            msg[key] = nil
+          end
+        end
+      end
+
+      true
+    end
     
   end
 end

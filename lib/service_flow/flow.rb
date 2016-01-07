@@ -22,50 +22,120 @@ module ServiceFlow
     def initialize(flow, cache_mode = nil)
 
       # TODO: not very secure
-      if flow.first['actor']
-        @source = nil
-      else
-        @source = Object.const_get("::ServiceFlow::#{flow.first['type']}").new( *flow.first['init_args'])
-        flow = flow.drop 1
-      end
+      case flow.first
+      when Hash
+        if flow.first['actor']
+          @source = nil
+        else
+          @source = Object.const_get("::ServiceFlow::#{flow.first['type']}").new( *flow.first['init_args'])
+          flow = flow.drop 1
+        end
 
-      case cache_mode
-      when :unit, 'unit'
-        @actions = flow.map do |action|
-          case action['type']
-          when 'WebAction'
-            actor = action['actor']
-            method = action['method']
-            cache =  actor == 'Baidu' && method == 'search' ? ::Cache::NaiveSemanticLRU.new(1000) : ::Cache::LRU.new(1000)
-            ::ServiceFlow::Cache.new ::ServiceFlow::WebAction.new( action), cache, ::Cache::ParamsScheme[actor][method]
-          else
-            Object.const_get("::ServiceFlow::#{action['type']}").new action, :unit
+        case cache_mode
+        when :unit, 'unit'
+          @actions = flow.map do |action|
+            case action['type']
+            when 'WebAction'
+              actor = action['actor']
+              method = action['method']
+              cache =  actor == 'Baidu' && method == 'search' ? ::Cache::NaiveSemanticLRU.new(1000) : ::Cache::LRU.new(1000)
+              ::ServiceFlow::Cache.new ::ServiceFlow::WebAction.new( action), cache, ::Cache::ParamsScheme[actor][method]
+            else
+              Object.const_get("::ServiceFlow::#{action['type']}").new action, :unit
+            end
+          end
+        else
+          @actions = flow.map do |action|
+            Object.const_get("::ServiceFlow::#{action['type']}").new action
           end
         end
-      else
-        @actions = flow.map do |action|
-          Object.const_get("::ServiceFlow::#{action['type']}").new action
+
+        @source.succ = @actions.first if @source
+        @actions.each_with_index do |action, index|
+          action.succ = @actions[index+1] if index != @actions.length
+          action.prev = @actions[index-1] if index != 0
         end
-      end
 
-      @source.succ = @actions.first if @source
-
-      @actions.each_with_index do |action, index|
-        action.succ = @actions[index+1] if index != @actions.length
-        action.prev = @actions[index-1] if index != 0
+      else
+        @source, @actions = nil, flow
+        @actions.each { |action| action.prev, action.succ = nil, nil }
       end
 
       @log = []
+
     end
 
-    def start(msg = nil)
-      msg ||= @source.gen_msg(:normal)
-      @msg = msg.clone
+    # TODO: test
+    def transform!( cache_mode )
+      if [ :combined, 'combined' ].include? cache_mode
+        _actions = []
+        for n in Range.new(0, shortest_path.length - 1, true)
+          i, j = shortest_path.values_at n, n+1
+          if j - i == 1
+            _action = @actions[i]
+            if _action.respond_to? :transform!
+              _action.transform!(cache_mode)
+              _action.prev, _action.succ = nil, nil
+              _actions << _action
+            else
+              puts _action.actor.class.to_s, _action.method
+              _cache = ::ServiceFlow::Cache.new _action, ::Cache::LRU.new(1000), ::Cache::ParamsScheme[_action.actor.class.to_s.split('::').last][_action.method]
+              _cache.prev, _cache.succ = nil, nil 
+              _action.prev, _action.succ = nil, nil
+              _actions << _cache
+            end
+          else
+            _flow = @actions[i, j-i]
+            _cache = ::ServiceFlow::Cache.new ::ServiceFlow::Flow.new(_flow), ::Cache::LRU.new(1000), ::Cache::ParamsScheme[_flow.first.actor.class.to_s.split('::').last][_flow.first.method]
+ 
+            # TODO
+            _cache.prev, _cache.succ = nil, nil 
+            _actions << _cache
+          end
+        end
+        @actions = _actions
+      end
+    end
 
-      lapse = Benchmark.ms do
-        @actions.each do |action|
-          msg.merge! action.start(msg)
-          # puts msg
+    def transform( cahce_mode )
+    end
+
+    def first_action
+      actions.first
+    end
+
+    def start(msg_or_params = nil, which = 0)
+      case which
+      when 0
+        msg ||= @source.gen_msg(:normal)
+        @msg = msg.clone
+
+        lapse = Benchmark.ms do
+          @actions.each do |action|
+            msg.merge! action.start(msg)
+            # puts msg
+          end
+        end
+      when 1
+        _msg = first_action.output.each_with_object({}) do |(key, val), ob|
+          map = Array === val ? val : val['map']
+          _tmp = ob
+          map.each_with_index do |m, i|
+            if i == r.size - 1
+              _tmp[m] = msg_or_params[key]
+            else
+              _tmp[m] = {}
+              _tmp = tmp[m]
+            end
+          end
+        end
+        msg = {}
+        lapse = Benchmark.ms do
+          @actions.each do |action|
+            res = action.start(_msg)
+            _msg.merge! res
+            msg.merge! res
+          end
         end
       end
       
@@ -105,12 +175,14 @@ module ServiceFlow
           for j in Range.new(i+1, _len, true)
             @mat[i][j] = CacheEdge.new(_actions[i], _actions[j]).caching_cost
             _tmp = _actions[j].respond_to?(:caching_cost) ? _actions[j].caching_cost : _actions[j].invoking_time
-            if j - i == 1 && @mat[i][j] > _tmp
+            if j - i == 1 && (@mat[i][j].nil? || @mat[i][j] > _tmp )
               @mat[i][j] = _tmp
             end
           end
         end
       end
+
+      puts @mat.inspect
 
       len = @mat.size
 
@@ -123,7 +195,7 @@ module ServiceFlow
         min = dist.each_with_index.reject{ |(dist, mark), index| mark == 1 || dist.nil? }.min.last
         dist[min][1] = 1
 
-        puts dist.inspect
+        # puts dist.inspect
 
         break if min == len-1
 
@@ -196,6 +268,26 @@ module ServiceFlow
 
     def back
       @actions.last
+    end
+
+    # Methods for metrics
+
+    [ 'hit_rate', 'query_time', 'caching_time' ].each do |m|
+      define_method m do 
+        actions.first.public_send m
+      end
+    end
+
+    def invalid_rate
+      1 - valid_rate
+    end
+
+    def valid_rate
+      actions.inject(1) { |prod, n| prod * n.valid_rate }
+    end
+
+    def invoking_time
+      actions.inject(0) { |sum, n| sum + n.invoking_time }
     end
 
     private

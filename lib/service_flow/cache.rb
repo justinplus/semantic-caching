@@ -9,11 +9,12 @@ module ServiceFlow
   class Cache < Action
     include Helper
 
-    attr_reader :actions, :cache, :params_scheme
+    attr_reader :actions, :cache, :params_scheme, :lru_clock
 
     def initialize(action_or_flow, cache, params_scheme)
       @actions, @cache, @params_scheme = action_or_flow, cache, params_scheme
       @log, @cache_log = [], []
+      @lru_clock = 0
     end
 
     def start(msg_or_params, which = 0)
@@ -26,12 +27,19 @@ module ServiceFlow
       res
     end
 
+    def first_action
+      @actions.respond_to?(:first_action) ? @actions.first_action : @actions
+    end
+
     def input
-      @actions.respond_to?(:first_action) ? @actions.first_action.input : @actions.input
+      # @actions.respond_to?(:first_action) ? @actions.first_action.input : @actions.input
+      first_action.input
       # NOTE: the order
     end
 
     def cached_get(params)
+      @lru_clock += 1
+
       json, status = nil, nil
 
       # time cost of cache query
@@ -41,16 +49,27 @@ module ServiceFlow
         json, status= cache.get params_to_key(params)
       end
 
-      desc = if json.nil? 
-               nil
-             else 
-               data = JSON.parse json
-               ::Cache::Descriptor.new(params, data['content'], data['ttl'])
-             end 
+      if json.nil? 
+        desc = nil
+      else 
+        data = JSON.parse json
+        desc = ::Cache::Descriptor.new(params, data['content'], data['lru_time'])
+        if !desc.lru_time.nil? && desc.lru_time < lru_clock
+          refresh_trans = Benchmark.ms do
+            data = actions.start(params, 1)
+          end
+          refresh_caching = Benchmark.ms do
+            desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
+            cache.set params_to_key(params), desc.to_json
+          end
+        end
+      end 
 
       status ||= (desc.nil? ? :miss : :equal)
 
-      trans_elapse, miss_elapse = 0, 0
+      refresh_trans ||= 0
+      refresh_caching ||= 0
+      miss_trans, miss_caching = 0, 0
 
       case status
       when :equal
@@ -64,25 +83,29 @@ module ServiceFlow
       when :miss
         puts 'Miss >'
         # time cost of transmission when cache missed
-        trans_elapse = Benchmark.ms do
+        miss_trans = Benchmark.ms do
           data = actions.start(params, 1)
         end
         # NOTE: params here not filtered
-        desc = ::Cache::Descriptor.new(params, data, nil) 
         # time cost of set cache
-        miss_elapse = Benchmark.ms do
+        miss_caching = Benchmark.ms do
           puts 'Miss set the cache >'
+          desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
           cache.set params_to_key(params), desc.to_json
         end
       end
 
-      @cache_log << [status, query_elapse, trans_elapse, miss_elapse]
+      @cache_log << [status, query_elapse, miss_trans, miss_caching, refresh_trans, refresh_caching]
       desc.content
       
     end
 
     def params_to_key(params)
       params_scheme.map { |p| [p['name'], params[p['name']]] }.join(':')
+    end
+
+    def new_lru_time
+      first_action.refresh_freq == 0 ? nil : lru_clock + ( first_action.invoking_freq / first_action.refresh_freq ).round - 1 # decrease 1 or not
     end
 
     def log(scope = nil)
@@ -113,7 +136,10 @@ module ServiceFlow
     end
 
     def inspect
-      cache.inspect
+      <<-INSPECT
+#{actions.inspect}
+#{cache.inspect}
+      INSPECT
     end
   end
 end

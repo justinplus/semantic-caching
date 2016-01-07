@@ -50,7 +50,7 @@ OpenWeather:
     invoking_time: 485.98
     query_time: 0.174
     caching_time: 0.195
-    refresh_freq: 2
+    refresh_freq: 500
     invoking_freq: 1000
     data_size: 564
   forecast_v:

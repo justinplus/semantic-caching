@@ -15,6 +15,24 @@ module ServiceFlow
 
     end
 
+    def input
+      branches.each_with_object({}) do |br, hsh|
+        br.actions.first.input.each_value do |val|
+          case val
+          when Hash
+            hsh[val['map'].first] = nil 
+          when Array
+            hsh[val.first] = nil 
+          end
+        end
+
+      end
+    end
+
+    def transform!( cache_mode )
+      branches.each { |br| br.transform!(cache_mode) }
+    end
+
     def start(msg)
       res = nil
       lapse = Benchmark.ms do
