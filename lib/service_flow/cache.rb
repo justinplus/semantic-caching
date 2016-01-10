@@ -39,6 +39,7 @@ module ServiceFlow
 
     def cached_get(params)
       @lru_clock += 1
+      puts lru_clock
 
       json, status = nil, nil
 
@@ -55,6 +56,7 @@ module ServiceFlow
         data = JSON.parse json
         desc = ::Cache::Descriptor.new(params, data['content'], data['lru_time'])
         if !desc.lru_time.nil? && desc.lru_time < lru_clock
+          puts 'fresh the cache!!!'
           refresh_trans = Benchmark.ms do
             data = actions.start(params, 1)
           end
@@ -104,7 +106,7 @@ module ServiceFlow
       params_scheme.map { |p| [p['name'], params[p['name']]] }.join(':')
     end
 
-    def new_lru_time
+    def new_lru_time # TODO
       first_action.refresh_freq == 0 ? nil : lru_clock + ( first_action.invoking_freq / first_action.refresh_freq ).round - 1 # decrease 1 or not
     end
 
@@ -137,8 +139,11 @@ module ServiceFlow
 
     def inspect
       <<-INSPECT
-#{actions.inspect}
+==
+cache
+actions: #{actions.inspect}
 #{cache.inspect}
+==
       INSPECT
     end
   end

@@ -2,7 +2,5 @@ require 'yaml'
 require 'path_constant'
 
 module Cache
-  include PathConstant 
-
-  ParamsScheme = YAML.load_file DataRoot.join('params_scheme.yml')
+  ParamsScheme = YAML.load_file PathConstant::DataRoot.join('params_scheme.yml')
 end

@@ -107,7 +107,7 @@ module ServiceFlow
     def start(msg_or_params = nil, which = 0)
       case which
       when 0
-        msg ||= @source.gen_msg(:normal)
+        msg = msg_or_params || @source.gen_msg(:normal)
         @msg = msg.clone
 
         lapse = Benchmark.ms do
@@ -117,18 +117,19 @@ module ServiceFlow
           end
         end
       when 1
-        _msg = first_action.output.each_with_object({}) do |(key, val), ob|
+        _msg = first_action.input.each_with_object({}) do |(key, val), ob|
           map = Array === val ? val : val['map']
           _tmp = ob
           map.each_with_index do |m, i|
-            if i == r.size - 1
+            if i == map.size - 1
               _tmp[m] = msg_or_params[key]
             else
               _tmp[m] = {}
-              _tmp = tmp[m]
+              _tmp = _tmp[m]
             end
           end
         end
+        puts '****', _msg, '****'
         msg = {}
         lapse = Benchmark.ms do
           @actions.each do |action|

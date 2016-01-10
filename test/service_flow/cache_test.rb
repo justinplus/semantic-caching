@@ -1,41 +1,23 @@
 require_relative '../test_helper'
+require_relative 'flow_cases'
 
 require 'web_api'
 require 'service_flow'
 require 'path_constant'
+require 'cache/params_scheme'
+
 
 require 'yaml'
 
 class CacheTest < Minitest::Test
-  include PathConstant 
+  include FlowCases
 
   def setup
-    @params_scheme = YAML.load_file(DataRoot.join('params_scheme.yml'))
-  end
-
-  def test_cache
-    action = ::ServiceFlow::WebAction.new YAML.load_file(DataRoot.join('flow_weather.yml'))[2]
-    cache = ::ServiceFlow::Cache.new action, ::Cache::LRUInBytes.new(1000), @params_scheme['OpenWeather']['forecast_v']
-    source = ::ServiceFlow::OpenWeatherSource.new
-
-    0.times do
-      cache.start( { 'area' => { 'id' => source.next_f(:uni)[0] } } )
-    end
-
-    6.times do
-      cache.start( { 'area' => { 'id' => 101260301 } } )
-      puts cache.lru_clock
-      puts cache.inspect
-    end
-
-    puts cache.cache_log
-    # puts cache.inspect
-
   end
 
   def ntest_naive_semantic_cache
-    action = ::ServiceFlow::WebAction.new YAML.load_file(DataRoot.join('flow_dining.yml'))[1]
-    cache = ::ServiceFlow::Cache.new action, ::Cache::NaiveSemanticLRU.new(100), @params_scheme['Baidu']['search']
+    action = ::ServiceFlow::WebAction.new RawFlows['dining'][1]
+    cache = ::ServiceFlow::Cache.new action, ::Cache::NaiveSemanticLRU.new(100), ::Cache::ParamsScheme['Baidu']['search']
 
     # source = ::ServiceFlow::BaiduSource.new *[121.297198, 31.209686, 121.489795, 31.074682]
     source = ::ServiceFlow::BaiduSource.new *[121.397198, 31.209686, 121.409795, 31.174682], 3
@@ -55,5 +37,20 @@ class CacheTest < Minitest::Test
     1000.times {puts source.gen_msg(:normal).inspect}
   end
 
+  def test_cache_in_bytes
+    action = ::ServiceFlow::WebAction.new RawFlows['weather'][2]
+    cache = ::ServiceFlow::Cache.new action, ::Cache::LRUInBytes.new(5*1024), ::Cache::ParamsScheme['OpenWeather']['forecast_v']
+    source = ::ServiceFlow::OpenWeatherSource.new
+
+    100.times do
+      sleep 0.5
+      cache.start( { 'area' => { 'id' => source.next_f(:local)[0] } } )
+      puts cache.cache.inspect
+    end
+
+    puts cache.cache_log(:statistic).inspect
+    # puts cache.inspect
+
+  end
 
 end
