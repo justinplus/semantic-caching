@@ -24,8 +24,10 @@ module ServiceFlow
         avg = cnt == 0 ? 0 : sum / cnt
         # puts avg
         # puts 'ary', ary.inspect
-        var = cnt == 0 ? 0 : ary.each_with_object([0]) { |t, ob| ob[0] += (t-avg)*(t-avg) }[0] / cnt
-        { cnt: cnt, sum: sum, avg: avg, var: var}
+        var_sum = ary.inject(0) { |sum, t| sum + (t-avg)*(t-avg) } 
+        varp = cnt <= 1 ? 0 : var_sum / cnt
+        vara = cnt <= 1 ? 0 : var_sum / (cnt-1)
+        { cnt: cnt, sum: sum, avg: avg, varp: varp, vara: vara}
     end
   end
 end

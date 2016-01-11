@@ -26,13 +26,25 @@ class FlowUnitCacheTest < Minitest::Test
   end
 
   def test_cache_pool
+    ::Cache::CachePool.capacity = 1024 * 10
     flow = ServiceFlow::Flow.new RawFlows['dining'], :unit
-    1.times do
+    times = 0
+    20.times do
       flow.start
+      puts times+=1
     end
 
-    puts flow.cache_log(:statistic).inspect
-    puts flow.log(:statistic).inspect
+    puts flow.cache_log(:s).inspect
+    # puts flow.log(:statistic).inspect
+    # puts ::Cache::CachePool.log.inspect
+    puts ::Cache::CachePool.pool.map{|c| c.size}
+    
+    write_res @flow_dining.log, @flow_dining.log(:s)
 
   end
+
+  def write_res(raw, stat)
+    File.open(LogRoot.join("unit_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {raw: raw, stat: stat}.to_yaml)
+  end
+
 end

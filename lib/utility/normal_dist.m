@@ -1,6 +1,6 @@
 % function y = nm_dist(size)
 Mu = [0  0]';%均值，也就是数据的中心，控制生成点的总体位置
-Sigma = [0.05 0 ; 0 0.05];
+Sigma = [0.1 0 ; 0 0.1];
 p = mvnrnd( Mu, Sigma, 10000);
 plot( p(:,1), p(:,2), 'b.', Mu(1), Mu(2), 'r*', 'MarkerSize', 4 );
 csvwrite('normal_dist_0.01_0.01.csv', p);

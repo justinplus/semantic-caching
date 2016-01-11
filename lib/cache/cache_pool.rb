@@ -1,10 +1,29 @@
 module Cache
   class CachePool
-    Capacity = 1024 * 100
-    Strategy = :rand
+
+    @@capacity = 1024 * 1024
+    @@strategy = :rand
 
     @@pool = []
     @@map = {}
+
+    @@log = []
+
+    def self.capacity
+      @@capacity
+    end
+    
+    def self.capacity=(capacity)
+      @@capacity = capacity
+    end
+
+    def self.strategy
+      @@strategy
+    end
+    
+    def self.strategy=(strategy)
+      @@strategy = strategy
+    end
 
     def self.pool
       @@pool
@@ -12,6 +31,10 @@ module Cache
 
     def self.map
       @@map
+    end
+
+    def self.log
+      @@log
     end
 
     def self.size
@@ -44,17 +67,18 @@ module Cache
     end
 
     def set(key, value)
-      raise "The bytesize is larger than capacity" if value.bytesize > Capacity
+      raise "The bytesize is larger than capacity" if value.bytesize > @@capacity
 
-      while size(true) + value.bytesize > Capacity
+      while size(true) + value.bytesize > @@capacity
         discard
       end
 
       cache._set(key, value)
+      @@log << @@pool.map{ |c| c.size }
     end
 
     def discard
-      case Strategy
+      case @@strategy
       when :rand
         tmp = @@pool.select { |c| c.size > 0 }
         tmp[rand(tmp.size)]._discard

@@ -9,7 +9,7 @@ class FlowCacheSplitTest < Minitest::Test
     @flow = ::ServiceFlow::Flow.new YAML.load_file( PathConstant::DataRoot.join('flow_dining.yml') )
   end
 
-  def ntest_shortest_path
+  def test_shortest_path
     puts @flow.split_scheme.inspect
   end
 

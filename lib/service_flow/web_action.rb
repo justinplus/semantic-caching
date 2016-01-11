@@ -33,7 +33,7 @@ module ServiceFlow
 
     def start(msg_or_params, which = 0)
       res = nil
-      lapse = Benchmark.ms do
+      elapse = Benchmark.ms do
         params = which == 0 ? _bind(msg_or_params, @input) : msg_or_params.dup # TODO
 
         tries = 0
@@ -67,7 +67,7 @@ Resp: #{resp}
         # puts resp['results'][0];
         res = _bind(resp, @output)
       end
-      @log << lapse
+      @log << elapse
       res
     end
 

@@ -35,10 +35,10 @@ module ServiceFlow
 
     def start(msg)
       res = nil
-      lapse = Benchmark.ms do
+      elapse = Benchmark.ms do
         res = _start(msg)
       end
-      @log << lapse
+      @log << elapse
       res
     end
 

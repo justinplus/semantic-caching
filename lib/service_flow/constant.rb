@@ -1,5 +1,7 @@
 require 'logger'
 
+require 'path_constant'
+
 module ServiceFlow
   # CacheScheme = [:flow, :unit, 'flow', 'unit']
 
@@ -8,6 +10,6 @@ module ServiceFlow
               'Baidu:search' => { 'type' => 'NaiveSemanticLRUInBytes' } 
   }
 
-  Log = Logger.new(STDOUT)
+  Log = Logger.new PathConstant::LogRoot.join("log-#{Time.now.strftime('%Y%m%d_%H%M%S')}.log")
 end
 

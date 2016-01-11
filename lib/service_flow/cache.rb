@@ -9,6 +9,9 @@ module ServiceFlow
   class Cache < Action
     include Helper
 
+    StatusMap = { equal: 1, contain: 2, miss: 3,
+                  1 => :equal, 2 => :contain, 3 => :miss }
+
     attr_reader :actions, :cache, :params_scheme, :lru_clock
 
     def initialize(action_or_flow, cache, params_scheme)
@@ -19,11 +22,11 @@ module ServiceFlow
 
     def start(msg_or_params, which = 0)
       res = nil
-      lapse = Benchmark.ms do
+      elapse = Benchmark.ms do
         params = which == 0 ? _bind(msg_or_params, input) : msg_or_params
         res = cached_get params
       end
-      @log << lapse
+      @log << elapse
       res
     end
 
@@ -95,7 +98,7 @@ module ServiceFlow
         Log.debug "End handle miss"
       end
 
-      @cache_log << [status, query_elapse, miss_trans, miss_caching, refresh_trans, refresh_caching]
+      @cache_log << [ StatusMap[status], cache.size, query_elapse, miss_trans, miss_caching, refresh_trans, refresh_caching]
       desc.content
       
     end
@@ -126,10 +129,12 @@ module ServiceFlow
         counter[:times] = @cache_log.size
         counter[:size] = cache.size
         @cache_log.each do |log|
-          counter[log[0]] += 1
+          counter[StatusMap[log[0]]] += 1
           counter[:query_elapse] += log[1]
-          counter[:trans_elapse] += log[2]
-          counter[:miss_elapse] += log[3]
+          counter[:miss_trans] += log[2]
+          counter[:miss_caching] += log[3]
+          counter[:refresh_trans] += log[4]
+          counter[:refresh_caching] += log[5]
         end
         counter
       end

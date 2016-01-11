@@ -37,28 +37,26 @@ class FlowTest < Minitest::Test
   end
 
   def test_dining_flow
-    # f_metrics = File.open( DataRoot.join('flow_dining_metrics.txt'), 'a')
-    # f_msgs = File.open( DataRoot.join('flow_dining_msgs.txt'), 'a')
     
-    msgs = []
     @flow_dining = ServiceFlow::Flow.new YAML.load_file( DataRoot.join 'flow_dining.yml' )
+
+    times = 0
     begin
-      100.times do
+      10000.times do
         @flow_dining.start 
+        puts times+=1
+        sleep(0.1)
       end
-
     rescue
-      puts @flow_dining.log(:statistic).inspect
-      # f_metrics << @flow_dining.log.to_json
-      # f_metrics << "\n"
-      # f_msgs << msgs.to_json
-      # f_msgs << "\n" 
-      # f_metrics.close
-      # f_msgs.close
+      write_res @flow_dining.log, @flow_dining.log(:s)
     end
-    
-    puts @flow_dining.log(:statistic).inspect
 
+    write_res @flow_dining.log, @flow_dining.log(:s)
+
+  end
+
+  def write_res(raw, stat)
+    File.open(LogRoot.join("unit_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {raw: raw, stat: stat}.to_yaml)
   end
 end
 

@@ -149,7 +149,7 @@ module ServiceFlow
 
     def log(scope = nil)
       log = @actions.map{ |action| action.log(scope) }
-      log.unshift (scope.nil? || scope == :raw)  ? @log : Helper.cnt_sum_avg(@log)
+      log.unshift (scope.nil? || scope == :raw) ? @log : Helper.cnt_sum_avg(@log)
       # NOTE
     end
 
