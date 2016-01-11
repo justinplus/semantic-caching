@@ -1,3 +1,4 @@
+require 'service_flow/constant'
 require 'service_flow/source'
 require 'service_flow/action'
 require 'service_flow/web_action'

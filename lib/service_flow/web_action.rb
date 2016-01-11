@@ -35,9 +35,28 @@ module ServiceFlow
       res = nil
       lapse = Benchmark.ms do
         params = which == 0 ? _bind(msg_or_params, @input) : msg_or_params.dup # TODO
-        @actor.send @method, params
-        puts @actor.uri
-        resp = JSON.parse(@actor.get)
+
+        tries = 0
+        begin
+          tries += 1
+          @actor.send @method, params
+          resp = JSON.parse(@actor.get)
+          Log.debug <<-DEBUG
+Call #{@actor.class}, method: #{@method}, params: #{params}
+URL: #{@actor.uri}
+Resp: #{resp}
+          DEBUG
+        rescue StandardError => e
+          if(tries < 2)
+            Log.warn "Retry-#{tries}: #{e}"
+            sleep( 0.1 * 2 ** tries )
+            retry
+          else
+            Log.fatal "Error: #{e}"
+            raise e
+          end
+        end
+
         # unless resp['status'] == 0
           # raise <<-ERROR_MSG
           # Error_code: #{resp['status']}
@@ -46,7 +65,6 @@ module ServiceFlow
           # ERROR_MSG
         # end
         # puts resp['results'][0];
-        puts 'resp', resp
         res = _bind(resp, @output)
       end
       @log << lapse

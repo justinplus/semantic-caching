@@ -1,17 +1,42 @@
 module Cache
   class CachePool
-    Capacity = 1024*1024
+    Capacity = 1024 * 100
     Strategy = :rand
 
     @@pool = []
     @@map = {}
+
+    def self.pool
+      @@pool
+    end
+
+    def self.map
+      @@map
+    end
+
+    def self.size
+      @@pool.inject(0){ |sum, c| sum + c.size }
+    end
+
+    attr_reader :cache
     
-    attr_reader :pool
-  
-    def initialize(id, lru_class)
+    def initialize(id = nil, lru_class = LRUInBytes)
       @id = id
-      @@map[id] = @@pool.size
-      @@pool << lru_class.new(nil)
+      if @id.nil?
+        @id = @@pool.size
+      else
+        @@map[id] = @@pool.size
+      end
+      @cache = lru_class.new(nil)
+      @@pool << @cache
+    end
+
+    def size( global = false )
+      if global
+        self.class.size
+      else
+        cache.size
+      end
     end
 
     def get(key)
@@ -19,25 +44,24 @@ module Cache
     end
 
     def set(key, value)
-      while size + value.bytesize > Capacity
+      raise "The bytesize is larger than capacity" if value.bytesize > Capacity
+
+      while size(true) + value.bytesize > Capacity
         discard
       end
 
       cache._set(key, value)
-
-    end
-
-    def size
-      @@pool.inject(0){ |sum, c| sum + c.size }
     end
 
     def discard
       case Strategy
       when :rand
-        @@pool[rand(@@pool.size)]._discard
+        tmp = @@pool.select { |c| c.size > 0 }
+        tmp[rand(tmp.size)]._discard
       when :priority
 
       end
     end
+
   end
 end

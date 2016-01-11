@@ -1,7 +1,7 @@
 module Cache
 
   # Naive semantic LRU cache for Baidu web action of method search
-  class NaiveSemanticLRU < LRU
+  module NaiveSemantic
     RadiusRange = [1000, 2000, 3000, 4000, 5000]
 
     def get(key)
@@ -22,4 +22,15 @@ module Cache
     end
 
   end
+
+  class NaiveSemanticLRU < LRU
+    include NaiveSemantic
+  end
+
+  class NaiveSemanticLRUInBytes < LRUInBytes
+    include NaiveSemantic
+  end
+
+
+
 end

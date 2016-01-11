@@ -39,14 +39,13 @@ module ServiceFlow
 
     def cached_get(params)
       @lru_clock += 1
-      puts lru_clock
+      Log.debug "LRU clock: #{lru_clock}"
 
       json, status = nil, nil
 
       # time cost of cache query
+      Log.debug "Query cache, params: #{params}, key: #{params_to_key(params)}"
       query_elapse = Benchmark.ms do
-        puts 'Query the cache'
-        puts params_to_key(params)
         json, status= cache.get params_to_key(params)
       end
 
@@ -56,7 +55,7 @@ module ServiceFlow
         data = JSON.parse json
         desc = ::Cache::Descriptor.new(params, data['content'], data['lru_time'])
         if !desc.lru_time.nil? && desc.lru_time < lru_clock
-          puts 'fresh the cache!!!'
+          Log.debug 'Begin refresh cache'
           refresh_trans = Benchmark.ms do
             data = actions.start(params, 1)
           end
@@ -64,6 +63,7 @@ module ServiceFlow
             desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
             cache.set params_to_key(params), desc.to_json
           end
+          Log.debug 'End refresh cache'
         end
       end 
 
@@ -75,26 +75,24 @@ module ServiceFlow
 
       case status
       when :equal
-        puts 'Equal >'
         data = desc.content
       when :contain
-        puts 'Contain >'
         # TODO:
         # data = desc.filter status
         data = desc.content
       when :miss
-        puts 'Miss >'
         # time cost of transmission when cache missed
+        Log.debug 'Begin handle miss'
         miss_trans = Benchmark.ms do
           data = actions.start(params, 1)
         end
         # NOTE: params here not filtered
         # time cost of set cache
         miss_caching = Benchmark.ms do
-          puts 'Miss set the cache >'
           desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
           cache.set params_to_key(params), desc.to_json
         end
+        Log.debug "End handle miss"
       end
 
       @cache_log << [status, query_elapse, miss_trans, miss_caching, refresh_trans, refresh_caching]

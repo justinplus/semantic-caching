@@ -38,7 +38,9 @@ module ServiceFlow
             when 'WebAction'
               actor = action['actor']
               method = action['method']
-              cache =  actor == 'Baidu' && method == 'search' ? ::Cache::NaiveSemanticLRU.new(1000) : ::Cache::LRU.new(1000)
+              # cache =  actor == 'Baidu' && method == 'search' ? ::Cache::LRUInBytes.new(1024*1024) : ::Cache::LRUInBytes.new(1024*1024)
+              lru_type = LRUConfig.has_key?("#{actor}:#{method}") ? LRUConfig["#{actor}:#{method}"]['type'] : LRUConfig['default']['type']
+              cache = ::Cache::CachePool.new nil, Object.const_get("::Cache::#{lru_type}")
               ::ServiceFlow::Cache.new ::ServiceFlow::WebAction.new( action), cache, ::Cache::ParamsScheme[actor][method]
             else
               Object.const_get("::ServiceFlow::#{action['type']}").new action, :unit
@@ -124,12 +126,12 @@ module ServiceFlow
             if i == map.size - 1
               _tmp[m] = msg_or_params[key]
             else
-              _tmp[m] = {}
+              _tmp[m] = {} if _tmp[m].nil?
               _tmp = _tmp[m]
             end
           end
         end
-        puts '****', _msg, '****'
+        # puts '****', _msg, '****'
         msg = {}
         lapse = Benchmark.ms do
           @actions.each do |action|
@@ -183,7 +185,7 @@ module ServiceFlow
         end
       end
 
-      puts @mat.inspect
+      # puts @mat.inspect
 
       len = @mat.size
 

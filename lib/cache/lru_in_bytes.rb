@@ -23,5 +23,18 @@ module Cache
       end
     end
 
+    def _set(key, value)
+      val = @elems.delete key
+      @size -= val.bytesize unless val.nil?
+
+      @elems[key] = value
+      @size += value.bytesize
+
+    end
+
+    def _discard
+      @size -= @elems.delete(@elems.first.first).bytesize
+    end
+
   end
 end

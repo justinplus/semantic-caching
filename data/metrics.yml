@@ -23,7 +23,7 @@ Baidu:
     invoking_freq: 1000
     data_size: 2870
   event_detail:
-    hit_rate: 0.944
+    hit_rate: 0.8
     invoking_time: 464.24
     query_time: 0.152
     caching_time: 0.701
@@ -46,15 +46,15 @@ Baidu:
 
 OpenWeather:
   forecast_f:
-    hit_rate: 0.996
+    hit_rate: 0.9
     invoking_time: 485.98
     query_time: 0.174
     caching_time: 0.195
-    refresh_freq: 500
+    refresh_freq: 2
     invoking_freq: 1000
     data_size: 564
   forecast_v:
-    hit_rate: 0.996
+    hit_rate: 0.9
     invoking_time: 485.98
     query_time: 0.174
     caching_time: 0.195

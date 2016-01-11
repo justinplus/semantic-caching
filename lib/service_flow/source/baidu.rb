@@ -13,7 +13,7 @@ module ServiceFlow
     # @@lng_range = Range.new 121.36, 121.58 
     # @@lat_range = Range.new 31.14, 31.345
 
-    @@bounded_normal_dist = CSV.read DataRoot.join('bounded_normal_dist.csv')
+    @@normal_dist = CSV.read DataRoot.join('normal_dist_0.01_0.01.csv')
     @@tags = YAML.load_file DataRoot.join('tags_baidu.yml')
     @@tags_l1 = @@tags.keys
     @@tags_l2 = @@tags.each.each_with_object([]) { |(_, val), res| res << val.keys unless val.nil? }.flatten
@@ -46,8 +46,8 @@ module ServiceFlow
         end
       when :normal, :nm
         @normal_index ||= 0
-        lng = @lng_center + @lng_delta * @@bounded_normal_dist[@normal_index][0].to_f
-        lat = @lat_center + @lat_delta * @@bounded_normal_dist[@normal_index][0].to_f
+        lng = @lng_center + @lng_delta * @@normal_dist[@normal_index][0].to_f
+        lat = @lat_center + @lat_delta * @@normal_dist[@normal_index][0].to_f
         @normal_index += 1
         [lng.round(@precision), lat.round(@precision)]
       end
