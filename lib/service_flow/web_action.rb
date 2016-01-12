@@ -48,13 +48,16 @@ Resp: #{resp}
           unless resp['status'].nil? || resp['status'] == 0 
             raise resp['message'].nil? ? 'wrong status' : "#{resp['message']}"
           end
+          if !resp['results'].nil? && resp['results'].empty?
+            raise 'empty results'
+          end
         rescue StandardError => e
           if(tries < 2)
             Log.warn "Retry-#{tries}: #{e}"
             sleep( 0.1 * 2 ** tries )
             retry
           else
-            Log.fatal "Error: #{e}"
+            Log.fatal "Error: #{e}, type: #{e.class}, at: #{$@}"
             raise e
           end
         end

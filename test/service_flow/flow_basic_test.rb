@@ -48,10 +48,10 @@ class FlowTest < Minitest::Test
         sleep(0.1)
       end
     rescue
+      puts "error:#{$!} at:#{$@}"
+    ensure
       write_res @flow_dining.log, @flow_dining.log(:s)
     end
-
-    write_res @flow_dining.log, @flow_dining.log(:s)
 
   end
 
