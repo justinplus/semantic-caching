@@ -34,11 +34,10 @@ module ServiceFlow
     def start(msg_or_params, which = 0)
       res = nil
       elapse = Benchmark.ms do
-        params = which == 0 ? _bind(msg_or_params, @input) : msg_or_params.dup # TODO
-
         tries = 0
         begin
           tries += 1
+          params = which == 0 ? _bind(msg_or_params, @input) : msg_or_params.dup # TODO
           @actor.send @method, params
           resp = JSON.parse(@actor.get)
           Log.debug <<-DEBUG
@@ -46,6 +45,9 @@ Call #{@actor.class}, method: #{@method}, params: #{params}
 URL: #{@actor.uri}
 Resp: #{resp}
           DEBUG
+          unless resp['status'].nil? || resp['status'] == 0 
+            raise resp['message'].nil? ? 'wrong status' : "#{resp['message']}"
+          end
         rescue StandardError => e
           if(tries < 2)
             Log.warn "Retry-#{tries}: #{e}"
@@ -57,14 +59,6 @@ Resp: #{resp}
           end
         end
 
-        # unless resp['status'] == 0
-          # raise <<-ERROR_MSG
-          # Error_code: #{resp['status']}
-          # URL: #{@actor.uri}
-          # Response: #{resp}
-          # ERROR_MSG
-        # end
-        # puts resp['results'][0];
         res = _bind(resp, @output)
       end
       @log << elapse
