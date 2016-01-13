@@ -29,5 +29,21 @@ module ServiceFlow
         vara = cnt <= 1 ? 0 : var_sum / (cnt-1)
         { cnt: cnt, sum: sum, avg: avg, varp: varp, vara: vara}
     end
+
+    def self.reverse_bind(params, mapping)
+      mapping.each_with_object({}) do |(key, val), ob|
+        map = Array === val ? val : val['map']
+        _tmp = ob
+        map.each_with_index do |m, i|
+          if i == map.size - 1
+            _tmp[m] = params[key]
+          else
+            _tmp[m] = {} if _tmp[m].nil?
+            _tmp = _tmp[m]
+          end
+        end
+      end
+    end
+
   end
 end

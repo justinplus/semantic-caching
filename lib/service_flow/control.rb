@@ -17,15 +17,7 @@ module ServiceFlow
 
     def input
       branches.each_with_object({}) do |br, hsh|
-        br.actions.first.input.each_value do |val|
-          case val
-          when Hash
-            hsh[val['map'].first] = nil 
-          when Array
-            hsh[val.first] = nil 
-          end
-        end
-
+        hsh.merge! br.actions.first.input
       end
     end
 
@@ -33,10 +25,25 @@ module ServiceFlow
       branches.each { |br| br.transform!(cache_mode) }
     end
 
-    def start(msg)
-      res = nil
-      elapse = Benchmark.ms do
-        res = _start(msg)
+    def start(msg_or_params, which = 0)
+      case which
+      when 0
+        res = nil
+        elapse = Benchmark.ms do
+          res = _start(msg_or_params)
+        end
+      when 1
+        msg = Helper.reverse_bind(msg_or_params, input)
+        _msg =  msg.dup
+
+        res = nil
+        elapse = Benchmark.ms do
+          res = _start(msg)
+        end
+
+        _msg.keys.each do |key|
+          res.delete key
+        end
       end
       @log << elapse
       res

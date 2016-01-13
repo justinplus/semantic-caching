@@ -48,7 +48,9 @@ module ServiceFlow
 
     def valid_data_dependency?
       _from = from.succ
-      return true if _from == to
+
+      # TODO: Bug here
+      return true if _from == to && WebAction === _from
 
       msg = {}
       _from.input.each_value do |val|
@@ -74,7 +76,7 @@ module ServiceFlow
 
     def _valid_data_dependency?(flow, msg)
       flow.each do |action|
-        puts msg.inspect
+        # puts msg.inspect
         case action
         when Exclusive, Parallel
           action.branches.each do |br|
@@ -83,6 +85,7 @@ module ServiceFlow
         else
           action.input.each_value do |val| 
             # puts msg.has_key?( val.first[1][0] )
+            # Bad readability
             return false if val.respond_to?(:first) && !msg.has_key?(val.first.respond_to?(:first) ? val.first[1][0] : val.first)
           end
           action.output.each_key do |key|

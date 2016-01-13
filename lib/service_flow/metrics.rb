@@ -16,7 +16,6 @@ module ServiceFlow
       rough ? _tmp : _tmp + _rate * caching_time + query_time
       # rough ? _tmp : _tmp + ( (1-hit_rate) + hit_rate * (1-valid_rate) ) * caching_time + query_time
     end
-
   end
 
 end

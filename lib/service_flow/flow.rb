@@ -14,7 +14,7 @@ module ServiceFlow
   class Flow
     include Metrics
 
-    attr_reader :actions, :msg 
+    attr_reader :actions, :msg
     attr_accessor :source
 
     alias_method :message, :msg
@@ -39,7 +39,7 @@ module ServiceFlow
               actor = action['actor']
               method = action['method']
               # cache =  actor == 'Baidu' && method == 'search' ? ::Cache::LRUInBytes.new(1024*1024) : ::Cache::LRUInBytes.new(1024*1024)
-              lru_type = LRUConfig.has_key?("#{actor}:#{method}") ? LRUConfig["#{actor}:#{method}"]['type'] : LRUConfig['default']['type']
+              lru_type = _decide_lru_type(actor, method)
               cache = ::Cache::CachePool.new nil, Object.const_get("::Cache::#{lru_type}")
               ::ServiceFlow::Cache.new ::ServiceFlow::WebAction.new( action), cache, ::Cache::ParamsScheme[actor][method]
             else
@@ -69,33 +69,54 @@ module ServiceFlow
 
     # TODO: test
     def transform!( cache_mode )
-      if [ :combined, 'combined' ].include? cache_mode
-        _actions = []
+      case cache_mode
+      when :combined, 'combined'
+        new_actions = []
+
         for n in Range.new(0, shortest_path.length - 1, true)
-          i, j = shortest_path.values_at n, n+1
-          if j - i == 1
-            _action = @actions[i]
-            if _action.respond_to? :transform!
-              _action.transform!(cache_mode)
-              _action.prev, _action.succ = nil, nil
-              _actions << _action
-            else
-              puts _action.actor.class.to_s, _action.method
-              _cache = ::ServiceFlow::Cache.new _action, ::Cache::LRU.new(1000), ::Cache::ParamsScheme[_action.actor.class.to_s.split('::').last][_action.method]
-              _cache.prev, _cache.succ = nil, nil 
-              _action.prev, _action.succ = nil, nil
-              _actions << _cache
-            end
+          i, j = shortest_path.values_at(n, n+1)
+          if @recursive[i][j] == true
+            raise 'Error recursive' unless j - i == 1
+            action = @actions[i]
+            action.prev, action.succ = nil, nil
+            action.transform!(cache_mode)
+            cache = action
           else
-            _flow = @actions[i, j-i]
-            _cache = ::ServiceFlow::Cache.new ::ServiceFlow::Flow.new(_flow), ::Cache::LRU.new(1000), ::Cache::ParamsScheme[_flow.first.actor.class.to_s.split('::').last][_flow.first.method]
- 
-            # TODO
-            _cache.prev, _cache.succ = nil, nil 
-            _actions << _cache
+            if j - i == 1
+              action = @actions[i]
+              action.prev, action.succ = nil, nil
+
+              if action.respond_to? :actor
+                actor = action.actor.class.to_s.split('::').last
+                method = action.method
+                scheme = ::Cache::ParamsScheme[actor][method]
+                lru_type = _decide_lru_type(actor, method)
+              else
+                scheme = action.branches.each_with_object([]) do |br, ary|
+                  class_name = br.first_action.actor.class.to_s.split('::').last
+                  ary.concat ::Cache::ParamsScheme[class_name][br.first_action.method]
+                end
+                scheme.uniq!
+                # TODO: naive handling
+                lru_type = 'LRUInBytes'
+              end
+
+              cache = ::ServiceFlow::Cache.new action,
+                ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}") ), scheme
+            else
+              actions = @actions[i, j-i]
+              # actions.each{ |action| action.prev, action.succ = nil, nil }
+              actor = actions.first.actor.class.to_s.split('::').last
+              method = actions.first.method
+              lru_type = _decide_lru_type(actor, method)
+              cache = ::ServiceFlow::Cache.new ::ServiceFlow::Flow.new(actions), 
+                ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}") ), ::Cache::ParamsScheme[actor][method]
+            end
           end
+          new_actions << cache
         end
-        @actions = _actions
+        @actions = new_actions
+      when :unit, 'unit'
       end
     end
 
@@ -119,18 +140,7 @@ module ServiceFlow
           end
         end
       when 1
-        _msg = first_action.input.each_with_object({}) do |(key, val), ob|
-          map = Array === val ? val : val['map']
-          _tmp = ob
-          map.each_with_index do |m, i|
-            if i == map.size - 1
-              _tmp[m] = msg_or_params[key]
-            else
-              _tmp[m] = {} if _tmp[m].nil?
-              _tmp = _tmp[m]
-            end
-          end
-        end
+        _msg = Helper.reverse_bind(msg_or_params, first_action.input)
         # puts '****', _msg, '****'
         msg = {}
         lapse = Benchmark.ms do
@@ -174,13 +184,19 @@ module ServiceFlow
         _actions = [ Action.new(nil, actions.first) ] + actions 
 
         @mat = Array.new(_len) { Array.new(_len) }
+        @benefit = Array.new(_len) { Array.new(_len) }
+        @recursive = Array.new(_len) { Array.new(_len) }
         for i in Range.new(0, _len , true)
           for j in Range.new(i+1, _len, true)
-            @mat[i][j] = CacheEdge.new(_actions[i], _actions[j]).caching_cost
-            _tmp = _actions[j].respond_to?(:caching_cost) ? _actions[j].caching_cost : _actions[j].invoking_time
-            if j - i == 1 && (@mat[i][j].nil? || @mat[i][j] > _tmp )
-              @mat[i][j] = _tmp
+            cache_edge = CacheEdge.new(_actions[i], _actions[j])
+            @mat[i][j] = cache_edge.caching_cost
+            if j - i == 1 
+              _tmp = _actions[j].respond_to?(:caching_cost) ? _actions[j].caching_cost : _actions[j].invoking_time
+              if (@mat[i][j].nil? || @mat[i][j] > _tmp )
+                @mat[i][j], @recursive[i][j] = _tmp, true
+              end
             end
+            @benefit[i][j] = @mat[i][j].nil? ? nil : cache_edge.invoking_time - @mat[i][j]
           end
         end
       end
@@ -228,8 +244,28 @@ module ServiceFlow
 
     alias_method :caching_cost, :shortest_dist
 
+    [:benefit, :recursive].each do |m|
+      define_method m do |raw = false|
+
+      var = instance_variable_get "@#{m}"
+      if raw
+        var
+      else
+        size = shortest_path.size
+        res = []
+        for i in Range.new(0, size - 1, true)
+          res << var[shortest_path[i]][shortest_path[i+1]]
+        end
+        res
+      end
+
+      end
+    end
+
     def split_scheme
-      scheme = { self: shortest_path }
+      scheme = { self: shortest_path,
+                 recursive: recursive,
+                 benefit: benefit }
       scheme[:sub] = actions.map do |action| 
         action.respond_to?(:split_scheme) ? action.split_scheme : nil
       end
@@ -275,7 +311,7 @@ module ServiceFlow
 
     # Methods for metrics
 
-    [ 'hit_rate', 'query_time', 'caching_time' ].each do |m|
+    [ 'hit_rate', 'query_time', 'caching_time', 'invoking_freq' ].each do |m|
       define_method m do 
         actions.first.public_send m
       end
@@ -293,6 +329,10 @@ module ServiceFlow
       actions.inject(0) { |sum, n| sum + n.invoking_time }
     end
 
+    def refresh_freq
+      invoking_freq * invalid_rate
+    end
+
     private
     def _shortest_path(start = 0, nodes = [front], path = [])
       while start < nodes.size do
@@ -306,6 +346,10 @@ module ServiceFlow
         nodes << start.succ if start.succ
         start += 1
       end
+    end
+
+    def _decide_lru_type(actor, method)
+      LRUConfig.has_key?("#{actor}:#{method}") ? LRUConfig["#{actor}:#{method}"]['type'] : LRUConfig['default']['type']
     end
 
   end

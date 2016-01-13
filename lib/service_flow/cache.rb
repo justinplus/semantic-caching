@@ -93,7 +93,9 @@ module ServiceFlow
         # time cost of set cache
         miss_caching = Benchmark.ms do
           desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
+          # data = desc.to_json
           cache.set params_to_key(params), desc.to_json
+          # Log.debug "Set cache, data: #{data}"
         end
         Log.debug "End handle miss"
       end
@@ -108,7 +110,7 @@ module ServiceFlow
     end
 
     def new_lru_time # TODO
-      first_action.refresh_freq == 0 ? nil : lru_clock + ( first_action.invoking_freq / first_action.refresh_freq ).round - 1 # decrease 1 or not
+      @actions.refresh_freq == 0 ? nil : lru_clock + ( @actions.invoking_freq / @actions.refresh_freq ).round - 1 # decrease 1 or not
     end
 
     def log(scope = nil)
@@ -130,11 +132,11 @@ module ServiceFlow
         counter[:size] = cache.size
         @cache_log.each do |log|
           counter[StatusMap[log[0]]] += 1
-          counter[:query_elapse] += log[1]
-          counter[:miss_trans] += log[2]
-          counter[:miss_caching] += log[3]
-          counter[:refresh_trans] += log[4]
-          counter[:refresh_caching] += log[5]
+          counter[:query_elapse] += log[2]
+          counter[:miss_trans] += log[3]
+          counter[:miss_caching] += log[4]
+          counter[:refresh_trans] += log[5]
+          counter[:refresh_caching] += log[6]
         end
         counter
       end
