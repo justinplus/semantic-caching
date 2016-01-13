@@ -26,25 +26,30 @@ class FlowUnitCacheTest < Minitest::Test
   end
 
   def test_cache_pool
-    ::Cache::CachePool.capacity = 1024 * 10
-    flow = ServiceFlow::Flow.new RawFlows['dining'], :unit
-    times = 0
-    20.times do
-      flow.start
-      puts times+=1
-    end
+    size_in_mb = 1
+    ::Cache::CachePool.capacity = 1024 * 1024 * size_in_mb
 
-    puts flow.cache_log(:s).inspect
-    # puts flow.log(:statistic).inspect
-    # puts ::Cache::CachePool.log.inspect
-    puts ::Cache::CachePool.pool.map{|c| c.size}
-    
-    write_res @flow_dining.log, @flow_dining.log(:s)
+    flow = ServiceFlow::Flow.new RawFlows['dining'], :unit
+
+    times = 0
+    begin
+      10000.times do
+        flow.start
+        puts times+=1
+        sleep 0.5
+      end
+    rescue
+      puts "error:#{$!} at:#{$@}"
+    ensure
+      write_res "unit_cache_pool_log_#{size_in_mb}", ::Cache::CachePool.log.to_yaml
+      write_res "unit_exec_log_#{size_in_mb}", {raw: flow.log, stat: flow.log(:s)}.to_yaml
+      write_res "unit_cache_log_#{size_in_mb}", {raw: flow.cache_log, stat: flow.cache_log(:s)}.to_yaml
+    end
 
   end
 
-  def write_res(raw, stat)
-    File.open(LogRoot.join("unit_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {raw: raw, stat: stat}.to_yaml)
+  def write_res(file_name, data)
+    File.open(::PathConstant::LogRoot.join("#{file_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write(data) 
   end
 
 end

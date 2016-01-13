@@ -3,3 +3,5 @@
 
 test/metrics/data/*.csv
 test/data/*
+
+log/*
