@@ -6,6 +6,7 @@ module Cache
 
     @@pool = []
     @@map = {}
+    @@benefit = []
 
     @@log = []
 
@@ -33,6 +34,10 @@ module Cache
       @@map
     end
 
+    def self.benefit
+      @@benefit
+    end
+
     def self.log
       @@log
     end
@@ -43,7 +48,7 @@ module Cache
 
     attr_reader :cache
     
-    def initialize(id = nil, lru_class = LRUInBytes)
+    def initialize(id = nil, lru_class = LRUInBytes, options = {})
       @id = id
       if @id.nil?
         @id = @@pool.size
@@ -52,6 +57,7 @@ module Cache
       end
       @cache = lru_class.new(nil)
       @@pool << @cache
+      @@benefit << options.fetch(:benefit, 0)
     end
 
     def size( global = false )
@@ -82,8 +88,12 @@ module Cache
       when :rand
         tmp = @@pool.select { |c| c.size > 0 }
         tmp[rand(tmp.size)]._discard
-      when :priority
-
+      when :benefit_size
+        tmp = []
+        @@pool.each_with_index do |c, i|
+          tmp << [c, @@benefit[i] / c.peek.last.bytesize] if c.size > 0
+        end
+        tmp.sample(4).min_by{ |x| x.last }.first._discard
       end
     end
 

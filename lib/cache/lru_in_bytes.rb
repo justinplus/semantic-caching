@@ -26,6 +26,10 @@ module Cache
       end
     end
 
+    def peek
+      @elems.first
+    end
+
     def _set(key, value)
       @semaphore.synchronize do
         val = @elems.delete key
