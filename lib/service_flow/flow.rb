@@ -82,6 +82,7 @@ module ServiceFlow
             action.transform!(cache_mode)
             cache = action
           else
+            _benefit = @benefit[i][j]
             if j - i == 1
               action = @actions[i]
               action.prev, action.succ = nil, nil
@@ -102,7 +103,7 @@ module ServiceFlow
               end
 
               cache = ::ServiceFlow::Cache.new action,
-                ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}") ), scheme
+                ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit: _benefit ), scheme
             else
               actions = @actions[i, j-i]
               # actions.each{ |action| action.prev, action.succ = nil, nil }
@@ -110,7 +111,7 @@ module ServiceFlow
               method = actions.first.method
               lru_type = _decide_lru_type(actor, method)
               cache = ::ServiceFlow::Cache.new ::ServiceFlow::Flow.new(actions), 
-                ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}") ), ::Cache::ParamsScheme[actor][method]
+                ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit: _benefit ), ::Cache::ParamsScheme[actor][method]
             end
           end
           new_actions << cache
