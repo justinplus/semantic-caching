@@ -13,7 +13,8 @@ module ServiceFlow
     # @@lng_range = Range.new 121.36, 121.58 
     # @@lat_range = Range.new 31.14, 31.345
 
-    @@normal_dist = CSV.read DataRoot.join('normal_dist_0.01_0.01.csv')
+    @@normal_dist = CSV.read DataRoot.join('normal_dist_0.1_0.1.csv')
+    @@radius = CSV.read DataRoot.join('radius.csv')
     @@tags = YAML.load_file DataRoot.join('tags_baidu.yml')
     @@tags_l1 = @@tags.keys
     @@tags_l2 = @@tags.each.each_with_object([]) { |(_, val), res| res << val.keys unless val.nil? }.flatten
@@ -47,11 +48,17 @@ module ServiceFlow
       when :normal, :nm
         @normal_index ||= 0
         lng = @lng_center + @lng_delta * @@normal_dist[@normal_index][0].to_f
-        lat = @lat_center + @lat_delta * @@normal_dist[@normal_index][0].to_f
+        lat = @lat_center + @lat_delta * @@normal_dist[@normal_index][1].to_f
         @normal_index += 1
         [lng.round(@precision), lat.round(@precision)]
       end
 
+    end
+
+    def next_radius
+      @radius_index ||= -1
+      @radius_index += 1
+      @@radius[@radius_index].first.to_i * 1000
     end
 
     def gen_msg(mode = nil)
@@ -64,7 +71,7 @@ module ServiceFlow
         },
         'query' => { 
           'q' => '餐厅',
-          'radius' => (rand(5)+1) * 1000
+          'radius' => next_radius
         }
       }
 
