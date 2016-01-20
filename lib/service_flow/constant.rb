@@ -11,5 +11,6 @@ module ServiceFlow
   }
 
   Log = Logger.new PathConstant::LogRoot.join("log-#{Time.now.strftime('%Y%m%d_%H%M%S')}.log")
+  # Log = Logger.new STDOUT
 end
 

@@ -11,7 +11,7 @@ class FlowCacheSplitTest < Minitest::Test
     @flow = ::ServiceFlow::Flow.new RawFlows['dining_lite']
   end
 
-  def test_shortest_path
+  def ntest_shortest_path
     puts @flow.split_scheme.inspect
     puts @flow.shortest_dist
     # puts @flow.actions[1].invoking_time,
@@ -22,6 +22,12 @@ class FlowCacheSplitTest < Minitest::Test
   def ntest_cache_split
     @flow.transform! :combined
     puts @flow.actions.inspect
+  end
+
+  def test_unit_transform
+    @flow.transform! :unit
+    puts @flow.actions.inspect
+    puts Cache::CachePool.benefit.inspect
   end
 
   def ntest_run_combined_cache

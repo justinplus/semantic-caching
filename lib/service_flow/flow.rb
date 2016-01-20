@@ -132,6 +132,8 @@ module ServiceFlow
               ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit: _benefit ), scheme
           else
             action.transform! cache_mode
+            action.prev, action.succ = nil, nil
+            action
           end
         end
 
