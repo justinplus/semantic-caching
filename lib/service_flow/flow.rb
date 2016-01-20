@@ -118,6 +118,23 @@ module ServiceFlow
         end
         @actions = new_actions
       when :unit, 'unit'
+        _shortest_path = shortest_path
+        @actions = @actions.each_with_index.map do |action, i|
+          case action
+          when WebAction
+            actor = action.actor.class.to_s.split('::').last
+            method = action.method
+            scheme = ::Cache::ParamsScheme[actor][method]
+            lru_type = _decide_lru_type(actor, method)
+            _benefit = @benefit[i][i+1]
+            action.prev, action.succ = nil, nil
+            ServiceFlow::Cache.new action,
+              ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit: _benefit ), scheme
+          else
+            action.transform! cache_mode
+          end
+        end
+
       end
     end
 
@@ -266,7 +283,8 @@ module ServiceFlow
     def split_scheme
       scheme = { self: shortest_path,
                  recursive: recursive,
-                 benefit: benefit }
+                 benefit: benefit,
+                 mat: @mat }
       scheme[:sub] = actions.map do |action| 
         action.respond_to?(:split_scheme) ? action.split_scheme : nil
       end
@@ -312,6 +330,7 @@ module ServiceFlow
 
     # Methods for metrics
 
+    # TODO: invoking_freq
     [ 'hit_rate', 'query_time', 'caching_time', 'invoking_freq' ].each do |m|
       define_method m do 
         actions.first.public_send m
@@ -323,7 +342,8 @@ module ServiceFlow
     end
 
     def valid_rate
-      actions.inject(1) { |prod, n| prod * n.valid_rate }
+      # actions.inject(1) { |prod, n| prod * n.valid_rate }
+      actions.map{ |n| n.valid_rate }.max
     end
 
     def invoking_time

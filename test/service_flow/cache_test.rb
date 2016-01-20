@@ -6,7 +6,6 @@ require 'service_flow'
 require 'path_constant'
 require 'cache/params_scheme'
 
-
 require 'yaml'
 
 class CacheTest < Minitest::Test
@@ -37,7 +36,7 @@ class CacheTest < Minitest::Test
     1000.times {puts source.gen_msg(:normal).inspect}
   end
 
-  def test_cache_in_bytes
+  def ntest_cache_in_bytes
     action = ::ServiceFlow::WebAction.new RawFlows['weather'][2]
     cache = ::ServiceFlow::Cache.new action, ::Cache::LRUInBytes.new(5*1024), ::Cache::ParamsScheme['OpenWeather']['forecast_v']
     source = ::ServiceFlow::OpenWeatherSource.new
@@ -50,6 +49,19 @@ class CacheTest < Minitest::Test
 
     puts cache.cache_log(:statistic).inspect
     # puts cache.inspect
+  end
+
+  def test_cache_log
+    action = ::ServiceFlow::WebAction.new RawFlows['weather'][2]
+    cache = ::ServiceFlow::Cache.new action, ::Cache::LRUInBytes.new(5*1024), ::Cache::ParamsScheme['OpenWeather']['forecast_v']
+
+    cache.instance_eval { @cache_log = YAML.load_file(::PathConstant::LogRoot.join('dining_lite', 'unit_cache_log_4_20160115_003948.yml'))[:raw][0] }
+    puts cache.cache_log(:s).to_yaml
+
+    cache.instance_eval { @cache_log = YAML.load_file(::PathConstant::LogRoot.join('dining_lite', 'combined_cache_log_4_20160115_061733.yml'))[:raw][0] }
+    puts cache.cache_log(:s).to_yaml
+
+
 
   end
 

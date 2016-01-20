@@ -42,8 +42,8 @@
         actor: Baidu
         method: locate
         input:
-          lat: { map: [ origin, lat ], post: [round, 3] }
-          lng: { map: [ origin, lng ], post: [round, 3] }
+          lat: { map: [ hotel, location, lat ], post: [round, 3] }
+          lng: { map: [ hotel, location, lng ], post: [round, 3] }
         output: 
           area_addr: [ result, addressComponent ]
         description: get the addr component of origin

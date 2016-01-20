@@ -50,7 +50,7 @@ OpenWeather:
     invoking_time: 485.98
     query_time: 0.174
     caching_time: 0.195
-    refresh_freq: 10
+    refresh_freq: 1
     invoking_freq: 500
     data_size: 564
   forecast_v:
@@ -58,7 +58,7 @@ OpenWeather:
     invoking_time: 485.98
     query_time: 0.174
     caching_time: 0.195
-    refresh_freq: 10
+    refresh_freq: 1
     invoking_freq: 500
     data_size: 564
   index_f:
@@ -66,7 +66,7 @@ OpenWeather:
     invoking_time: 501.36
     query_time: 0.147
     caching_time: 0.375
-    refresh_freq: 10
+    refresh_freq: 1
     invoking_freq: 500
     data_size: 541
   index_v:
@@ -74,7 +74,7 @@ OpenWeather:
     invoking_time: 501.36
     query_time: 0.147
     caching_time: 0.375
-    refresh_freq: 10
+    refresh_freq: 1
     invoking_freq: 500
     data_size: 546
 
@@ -84,7 +84,7 @@ Convert:
     invoking_time: 18.87
     query_time: 0.127
     caching_time: 0.110
-    refresh_freq: 0
+    refresh_freq: 0.01
     invoking_freq: 500
     data_size: 564
 

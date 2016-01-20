@@ -88,12 +88,18 @@ module Cache
       when :rand
         tmp = @@pool.select { |c| c.size > 0 }
         tmp[rand(tmp.size)]._discard
-      when :benefit_size
+      when :benefit_size, :bs
         tmp = []
         @@pool.each_with_index do |c, i|
           tmp << [c, @@benefit[i] / c.peek.last.bytesize] if c.size > 0
         end
-        tmp.sample(4).min_by{ |x| x.last }.first._discard
+        tmp.sample(2).min_by{ |x| x.last }.first._discard
+      when :bss
+        tmp = []
+        @@pool.each_with_index do |c, i|
+          tmp << [c, @@benefit[i] / (c.peek.last.bytesize * c.size)] if c.size > 0
+        end
+        tmp.min_by{ |x| x.last }.first._discard
       end
     end
 

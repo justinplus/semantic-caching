@@ -58,14 +58,16 @@ module ServiceFlow
       @branches.map{ |b| b.cache_log(scope) }
     end
 
-    [ 'hit_rate', 'query_time', 'caching_time' ].each do |m|
+    # TODO: invoking_freq
+    [ 'hit_rate', 'query_time', 'caching_time', 'invoking_freq' ].each do |m|
       define_method m do
         branches.inject(0) { |sum, br| sum + br.public_send(m) } / branches.size
       end
     end
 
     def valid_rate
-      branches.inject(1) { |prod, n| prod * n.valid_rate }
+      # branches.inject(1) { |prod, n| prod * n.valid_rate }
+      branches.map{ |n| n.valid_rate }.max
     end
 
     def invalid_rate
@@ -80,6 +82,11 @@ module ServiceFlow
     def invoking_time
       branches.map{ |br| br.invoking_time }.max
     end
+
+    def refresh_freq
+      invoking_freq * invalid_rate
+    end
+
 
     def split_scheme
       branches.map{ |br| br.split_scheme }

@@ -8,11 +8,12 @@ class FlowCacheSplitTest < Minitest::Test
   include FlowCases
 
   def setup
-    @flow = ::ServiceFlow::Flow.new RawFlows['dining']
+    @flow = ::ServiceFlow::Flow.new RawFlows['dining_lite']
   end
 
-  def ntest_shortest_path
+  def test_shortest_path
     puts @flow.split_scheme.inspect
+    puts @flow.shortest_dist
     # puts @flow.actions[1].invoking_time,
       # @flow.actions[1].valid_rate
     # puts @flow.actions[1].branches[1].valid_rate
@@ -23,7 +24,7 @@ class FlowCacheSplitTest < Minitest::Test
     puts @flow.actions.inspect
   end
 
-  def test_run_combined_cache
+  def ntest_run_combined_cache
     @flow.transform! :combined
     # puts @flow.actions[0].params_scheme
     # puts @flow.actions[1].params_scheme

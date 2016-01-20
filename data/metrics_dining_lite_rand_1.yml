@@ -1,0 +1,72 @@
+Baidu:
+  search:
+    hit_rate: 0.7524
+    invoking_time: 278.26
+    query_time: 5.036
+    caching_time: 7.159
+    refresh_freq: 0.15
+    invoking_freq: 1000
+    data_size: 831
+  detail:
+    hit_rate: 0.8603
+    invoking_time: 100.15
+    query_time: 5.131
+    caching_time: 10.268
+    refresh_freq: 0.15
+    invoking_freq: 1000
+    data_size: 2870
+  event_detail:
+    hit_rate: 0.8653
+    invoking_time: 97.02
+    query_time: 8.152
+    caching_time: 12.701
+    refresh_freq: 0.15
+    invoking_freq: 1000
+  locate:
+    hit_rate: 0.8612
+    invoking_time: 79.69
+    query_time: 5.168
+    caching_time: 9.176
+    refresh_freq: 0.05
+    invoking_freq: 1000
+  direct:
+    hit_rate: 0.837
+    invoking_time: 442.77
+    query_time: 0.022
+    caching_time: 0.245
+    refresh_freq: 0.1
+    invoking_freq: 1000
+
+OpenWeather:
+  forecast_v: &forecast_v
+    hit_rate: 0.8863
+    invoking_time: 355
+    query_time: 5.174
+    caching_time: 11.195
+    refresh_freq: 1
+    invoking_freq: 1000
+    data_size: 564
+  index_v: &index_v
+    hit_rate: 0.8879
+    invoking_time: 267.36
+    query_time: 5.147
+    caching_time: 8.375
+    refresh_freq: 1
+    invoking_freq: 1000
+    data_size: 546
+
+  index_f:
+    <<: *index_v
+  forecast_f:
+    <<: *forecast_v
+
+Convert:
+  open_weather:
+    hit_rate: 0.8852
+    invoking_time: 11.67
+    query_time: 6.127
+    caching_time: 10.110
+    refresh_freq: 0.01
+    invoking_freq: 1000
+    data_size: 564
+

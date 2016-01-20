@@ -56,7 +56,7 @@ class FlowTest < Minitest::Test
   end
 
   def write_res(raw, stat)
-    File.open(LogRoot.join("unit_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {raw: raw, stat: stat}.to_yaml)
+    File.open(LogRoot.join('no_cache', "no_cache_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {raw: raw, stat: stat}.to_yaml)
   end
 end
 

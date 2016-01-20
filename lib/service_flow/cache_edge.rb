@@ -19,12 +19,15 @@ module ServiceFlow
       1 - valid_rate
     end
 
+    # TODO: need test
     def valid_rate
-      rate = 1
+      # rate = 1
+      rate = 0
       _from = from.succ
       
       loop do
-        rate *= _from.valid_rate
+        # rate *= _from.valid_rate
+        rate = _from.valid_rate if rate < _from.valid_rate
         break rate if _from == to
         _from = _from.succ
       end 

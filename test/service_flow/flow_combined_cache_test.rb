@@ -30,8 +30,9 @@ class FlowCombinedCacheTest < Minitest::Test
   def test_cache_pool
     size_in_mb = 4
     ::Cache::CachePool.capacity = 1024 * 1024 * size_in_mb
+    # ::Cache::CachePool.strategy = :benefit_size
 
-    flow = ServiceFlow::Flow.new RawFlows['dining']
+    flow = ServiceFlow::Flow.new RawFlows['dining_lite']
     flow.transform! :combined
     # puts flow.split_scheme.inspect
 
@@ -40,7 +41,7 @@ class FlowCombinedCacheTest < Minitest::Test
       10000.times do
         flow.start
         puts times+=1
-        sleep 0.15
+        sleep 0.1
       end
     rescue
       puts "error:#{$!} at:#{$@}"

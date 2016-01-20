@@ -4,7 +4,7 @@ require 'path_constant'
 
 module ServiceFlow
 
-  METRICS = YAML.load_file PathConstant::DataRoot.join('metrics.yml')
+  METRICS = YAML.load_file PathConstant::DataRoot.join('metrics_dining_lite_rand_1.yml')
 
   BASIC_METRIC_NAMES = ['hit_rate', 'refresh_freq', 'invoking_time', 'query_time', 'caching_time', 'invoking_freq']
 

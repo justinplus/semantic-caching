@@ -49,6 +49,7 @@ module ServiceFlow
       # time cost of cache query
       Log.debug "Query cache, params: #{params}, key: #{params_to_key(params)}"
       query_elapse = Benchmark.ms do
+        sleep( @actions.query_time.to_f / 1000 )
         json, status= cache.get params_to_key(params)
       end
 
@@ -63,6 +64,7 @@ module ServiceFlow
             data = actions.start(params, 1)
           end
           refresh_caching = Benchmark.ms do
+            sleep( @actions.caching_time.to_f / 1000 )
             desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
             cache.set params_to_key(params), desc.to_json
           end
@@ -92,6 +94,7 @@ module ServiceFlow
         # NOTE: params here not filtered
         # time cost of set cache
         miss_caching = Benchmark.ms do
+          sleep( @actions.caching_time.to_f / 1000 )
           desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
           # data = desc.to_json
           cache.set params_to_key(params), desc.to_json
@@ -127,18 +130,32 @@ module ServiceFlow
       when :raw, nil
         @cache_log
       else
-        counter = Hash.new(0)
-        counter[:times] = @cache_log.size
-        counter[:size] = cache.size
+        s = Hash.new
+        s[:size], s[:count], s[:elapse] = cache.size, Hash.new(0), Hash.new(0)
+        # TODO: possibly divided by zero
+        s[:count][:query] = @cache_log.size
+
         @cache_log.each do |log|
-          counter[StatusMap[log[0]]] += 1
-          counter[:query_elapse] += log[2]
-          counter[:miss_trans] += log[3]
-          counter[:miss_caching] += log[4]
-          counter[:refresh_trans] += log[5]
-          counter[:refresh_caching] += log[6]
+          s[:count][StatusMap[log[0]]] += 1
+          s[:count][:refresh] += 1 if log[5] > 0
+
+          s[:elapse][:miss_trans] += log[3]
+          s[:elapse][:miss_caching] += log[4]
+          s[:elapse][:refresh_trans] += log[5]
+          s[:elapse][:refresh_caching] += log[6]
+          s[:elapse][:query] += log[2]
         end
-        counter
+        s[:avg_elapse] = [:miss, :refresh].each_with_object({}) do |key, ob|
+          ob["#{key}_trans".to_sym] = s[:count][key] == 0 ? 0 : s[:elapse]["#{key}_trans".to_sym] / s[:count][key]
+          ob["#{key}_caching".to_sym] = s[:count][key] == 0 ? 0 : s[:elapse]["#{key}_caching".to_sym] / s[:count][key]
+        end
+        s[:avg_elapse][:query] = s[:elapse][:query] / s[:count][:query]
+
+        s[:rate] = [:miss, :refresh].each_with_object({}) do |key, ob|
+          ob[key] = s[:count][key].to_f / s[:count][:query]
+        end
+        s[:rate][:hit] = ( s[:count][:equal] + s[:count][:contain] ).to_f / s[:count][:query]
+        s
       end
     end
 
