@@ -38,14 +38,14 @@ class FlowTest < Minitest::Test
 
   def test_dining_flow
     
-    @flow_dining = ServiceFlow::Flow.new YAML.load_file( DataRoot.join 'flow_dining.yml' )
+    @flow_dining = ServiceFlow::Flow.new YAML.load_file( DataRoot.join 'flow_dining_lite.yml' )
 
     times = 0
     begin
       10000.times do
         @flow_dining.start 
         puts times+=1
-        sleep(0.1)
+        sleep(0.2)
       end
     rescue
       puts "error:#{$!} at:#{$@}"
@@ -56,7 +56,7 @@ class FlowTest < Minitest::Test
   end
 
   def write_res(raw, stat)
-    File.open(LogRoot.join('no_cache', "no_cache_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {raw: raw, stat: stat}.to_yaml)
+    File.open(LogRoot.join("no_cache_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write( {stat: stat, raw: raw}.to_yaml)
   end
 end
 

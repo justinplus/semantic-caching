@@ -42,9 +42,9 @@ class FlowCacheTest < Minitest::Test
     rescue
       puts "error:#{$!} at:#{$@}"
     ensure
-      write_log "#{mode}_cache_pool_log_#{size_in_mb}", ::Cache::CachePool.log.to_yaml, comment: comment
-      write_log "#{mode}_exec_log_#{size_in_mb}", {stat: flow.log(:s), raw: flow.log}.to_yaml, comment: comment
-      write_log "#{mode}_cache_log_#{size_in_mb}", {stat: flow.cache_log(:s), raw: flow.cache_log}.to_yaml, comment: comment
+      write_log "#{mode[0]}_#{strategy}_#{size_in_mb}_pool", ::Cache::CachePool.log.to_yaml, comment: comment
+      write_log "#{mode[0]}_#{strategy}_#{size_in_mb}_exec", {stat: flow.log(:s), raw: flow.log}.to_yaml, comment: comment
+      write_log "#{mode[0]}_#{strategy}_#{size_in_mb}_cache", {stat: flow.cache_log(:s), raw: flow.cache_log}.to_yaml, comment: comment
     end
   end
 end
