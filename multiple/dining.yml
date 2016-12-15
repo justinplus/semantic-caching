@@ -1,0 +1,59 @@
+-
+  type: BaiduSource
+  is_source: true
+  # init_args: [121.297198, 31.209686, 121.489795, 31.074682]
+  init_args: [121.397198, 31.209686, 121.409795, 31.174682, 3]
+  method: gen_msg
+  args: :normal
+
+-
+  type: Cache
+  benefit: 202.52204321166
+  inner:
+    type: WebAction
+    actor: Baidu
+    method: search
+    input:
+      lng: { map: [ origin, lng ], post: [round, 3] }
+      lat: { map: [ origin, lat ], post: [round, 3] }
+      q: [ query, q ]
+      radius: [ query, radius ]
+    output:
+      hotel: [ results, 0 ]
+    description: Get a nearby restaurant
+-
+  type: Parallel
+  branches:
+    -
+      -  
+        type: ActionRef
+        key: place_detail
+    -
+      -
+        type: Cache
+        benefit: 72.236737383968
+        inner:
+          -
+            type: WebAction
+            actor: Baidu
+            method: locate
+            input:
+              lat: { map: [ hotel, location, lat ], post: [round, 3] }
+              lng: { map: [ hotel, location, lng ], post: [round, 3] }
+            output: 
+              area_addr: [ result, addressComponent ]
+            description: get the addr component of origin
+          -
+            type: WebAction
+            actor: Convert
+            method: open_weather
+            input:
+              name_cn: [ area_addr, district ]
+              prov_cn: [ area_addr, province ]
+            output:
+              area: [ results, 0 ]
+            description: convert address to area_id
+          # forecast and index can run parallel
+      - 
+        type: ActionRef
+        key: weather

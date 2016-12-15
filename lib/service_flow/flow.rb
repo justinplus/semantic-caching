@@ -11,7 +11,7 @@ require 'cache'
 require 'active_support/core_ext/object'
 
 module ServiceFlow
-  class Flow
+  class Flow < Action
     include Metrics
 
     attr_reader :actions, :msg
@@ -24,10 +24,14 @@ module ServiceFlow
       # TODO: not very secure
       case flow.first
       when Hash
-        if flow.first['actor']
+        if !flow.first['is_source']
           @source = nil
         else
           @source = Object.const_get("::ServiceFlow::#{flow.first['type']}").new( *flow.first['init_args'])
+          @source_method, @source_args = flow.first.values_at 'method', 'args'
+          @source_lambda = lambda do
+            @source.send @source_method, @source_args
+          end
           flow = flow.drop 1
         end
 
@@ -110,7 +114,7 @@ module ServiceFlow
               actor = actions.first.actor.class.to_s.split('::').last
               method = actions.first.method
               lru_type = _decide_lru_type(actor, method)
-              cache = ::ServiceFlow::Cache.new ::ServiceFlow::Flow.new(actions), 
+              cache = ::ServiceFlow::Cache.new ::ServiceFlow::Flow.new(actions),
                 ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit: _benefit ), ::Cache::ParamsScheme[actor][method]
             end
           end
@@ -150,7 +154,7 @@ module ServiceFlow
     def start(msg_or_params = nil, which = 0)
       case which
       when 0
-        msg = msg_or_params || @source.gen_msg(:normal)
+        msg = msg_or_params || @source_lambda.call
         @msg = msg.clone
 
         lapse = Benchmark.ms do
@@ -171,7 +175,7 @@ module ServiceFlow
           end
         end
       end
-      
+
       @log << lapse
 
       msg
@@ -201,7 +205,7 @@ module ServiceFlow
       # for testing
       unless @mat
         _len = actions.length + 1
-        _actions = [ Action.new(nil, actions.first) ] + actions 
+        _actions = [ Action.new(nil, actions.first) ] + actions
 
         @mat = Array.new(_len) { Array.new(_len) }
         @benefit = Array.new(_len) { Array.new(_len) }
@@ -210,7 +214,7 @@ module ServiceFlow
           for j in Range.new(i+1, _len, true)
             cache_edge = CacheEdge.new(_actions[i], _actions[j])
             @mat[i][j] = cache_edge.caching_cost
-            if j - i == 1 
+            if j - i == 1
               _tmp = _actions[j].respond_to?(:caching_cost) ? _actions[j].caching_cost : _actions[j].invoking_time
               if (@mat[i][j].nil? || @mat[i][j] > _tmp )
                 @mat[i][j], @recursive[i][j] = _tmp, true
@@ -287,7 +291,7 @@ module ServiceFlow
                  recursive: recursive,
                  benefit: benefit,
                  mat: @mat }
-      scheme[:sub] = actions.map do |action| 
+      scheme[:sub] = actions.map do |action|
         action.respond_to?(:split_scheme) ? action.split_scheme : nil
       end
       scheme
@@ -334,7 +338,7 @@ module ServiceFlow
 
     # TODO: invoking_freq
     [ 'hit_rate', 'query_time', 'caching_time', 'invoking_freq' ].each do |m|
-      define_method m do 
+      define_method m do
         actions.first.public_send m
       end
     end
@@ -360,7 +364,7 @@ module ServiceFlow
     def _shortest_path(start = 0, nodes = [front], path = [])
       while start < nodes.size do
         shortest = _overhead(start, nodes)
-        path.each_with_index do |val, index| 
+        path.each_with_index do |val, index|
           tmp = path[index] + _overhead(index, nodes)
           shortest = tmp if shortest > tmp # Attn: > or >=
         end

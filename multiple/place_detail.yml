@@ -1,0 +1,29 @@
+-
+  type: PlaceSource
+  is_source: true
+  method: next_id
+  args: :normal
+
+-
+  type: Cache
+  benefit: 163.03314256329
+  inner: 
+    -  
+      type: WebAction
+      actor: Baidu
+      method: detail
+      input: 
+        uid: [ hotel, uid ]
+      output:
+        detail: [ result, detail_info ]
+      description: get the deatils of that restaurant
+    -
+      type: WebAction
+      actor: Baidu
+      method: event_detail
+      input:
+        uid: [ hotel, uid]
+      output:
+        events: [ result, events ]
+      description: get the events of that restaurant
+

@@ -10,4 +10,4 @@ require 'service_flow/cache'
 require 'service_flow/message'
 require 'service_flow/cache_edge'
 require 'service_flow/flow'
-
+require 'service_flow/action_ref'

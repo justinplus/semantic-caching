@@ -24,7 +24,7 @@ class FlowCacheSplitTest < Minitest::Test
     puts @flow.actions.inspect
   end
 
-  def test_unit_transform
+  def ntest_unit_transform
     @flow.transform! :unit
     puts @flow.actions.inspect
     puts Cache::CachePool.benefit.inspect
@@ -34,7 +34,27 @@ class FlowCacheSplitTest < Minitest::Test
     @flow.transform! :combined
     # puts @flow.actions[0].params_scheme
     # puts @flow.actions[1].params_scheme
-    @flow.start
+    puts Cache::CachePool.benefit.inspect
+    puts Cache::CachePool.pool
+    puts @flow.actions.inspect
   end
+
+  def ntest_open_weather_source
+    src = ServiceFlow::OpenWeatherSource.new
+    10000.times do
+      n =  src.next_id_v :nm
+      # puts n.inspect
+    end
+  end
+
+  def test_open_weather_source
+    src = ServiceFlow::PlaceSource.new
+    10000.times do
+      n =  src.next_id :nm
+      puts n.inspect
+    end
+  end
+
+
 
 end

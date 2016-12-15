@@ -1,0 +1,33 @@
+- 
+  type: OpenWeatherSource
+  is_source: true
+  method: next_id_v
+  args: :normal
+
+-
+  type: Cache
+  benefit: 308.33167272649996
+  inner:
+    type: Parallel
+    branches:
+      -
+        - 
+          type: WebAction
+          actor: OpenWeather
+          input:
+            areaid: [ area, id ]
+          output:
+            index: [ i ]
+          method: index_v
+          description: get the index
+      -  
+        -
+          type: WebAction
+          actor: OpenWeather
+          method: forecast_v
+          input:
+            areaid: [ area, id ]
+          output:
+            weather: [c]
+            forecast: [f]
+          description: get the forecast

@@ -17,7 +17,7 @@ class FlowCombinedCacheTest < Minitest::Test
     # puts @flow.actions.inspect
     # msg = @flow.source.gen_msg(:normal)
 
-    500.times do 
+    500.times do
       @flow.start
     end
 
@@ -54,7 +54,7 @@ class FlowCombinedCacheTest < Minitest::Test
   end
 
   def write_res(file_name, data)
-    File.open(::PathConstant::LogRoot.join("#{file_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write(data) 
+    File.open(::PathConstant::LogRoot.join("#{file_name}_#{Time.now.strftime('%Y%m%d_%H%M%S')}.yml"), 'w').write(data)
   end
 
 end

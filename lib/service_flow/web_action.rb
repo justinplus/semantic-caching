@@ -31,6 +31,10 @@ module ServiceFlow
       @log = []
     end
 
+    def actor_name
+      actor.class.to_s.split('::').last
+    end
+
     def start(msg_or_params, which = 0)
       res = nil
       elapse = Benchmark.ms do
@@ -45,7 +49,7 @@ Call #{@actor.class}, method: #{@method}, params: #{params}
 URL: #{@actor.uri}
 Resp: #{resp}
           DEBUG
-          unless resp['status'].nil? || resp['status'] == 0 
+          unless resp['status'].nil? || resp['status'] == 0
             raise resp['message'].nil? ? 'wrong status' : "#{resp['message']}"
           end
           if !resp['results'].nil? && resp['results'].empty?

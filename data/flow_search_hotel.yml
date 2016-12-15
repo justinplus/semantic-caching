@@ -1,0 +1,19 @@
+-
+  type: BaiduSource
+  # init_args: [121.297198, 31.209686, 121.489795, 31.074682]
+  init_args: [121.397198, 31.209686, 121.409795, 31.174682, 3]
+  method: gen_msg
+  args: :uni
+-
+  type: WebAction
+  actor: Baidu
+  method: search
+  input:
+    lng: { map: [ origin, lng ], post: [round, 3] }
+    lat: { map: [ origin, lat ], post: [round, 3] }
+    q: [ query, q ]
+    radius: [ query, radius ]
+  output:
+    hotel: [ results ]
+  description: Get a nearby restaurant
+

@@ -13,7 +13,7 @@ module Cache
     def self.capacity
       @@capacity
     end
-    
+
     def self.capacity=(capacity)
       @@capacity = capacity
     end
@@ -21,7 +21,7 @@ module Cache
     def self.strategy
       @@strategy
     end
-    
+
     def self.strategy=(strategy)
       @@strategy = strategy
     end
@@ -47,7 +47,7 @@ module Cache
     end
 
     attr_reader :cache
-    
+
     def initialize(id = nil, lru_class = LRUInBytes, options = {})
       @id = id
       if @id.nil?
@@ -76,6 +76,7 @@ module Cache
       raise "The bytesize is larger than capacity" if value.bytesize > @@capacity
 
       while size(true) + value.bytesize > @@capacity
+        # TODO: record replacement times
         discard
       end
 

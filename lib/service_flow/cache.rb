@@ -14,8 +14,39 @@ module ServiceFlow
 
     attr_reader :actions, :cache, :params_scheme, :lru_clock
 
-    def initialize(action_or_flow, cache, params_scheme)
-      @actions, @cache, @params_scheme = action_or_flow, cache, params_scheme
+    def initialize(action_or_flow, cache = nil, params_scheme = nil)
+      if cache.nil? && params_scheme.nil?
+
+        inner_action, benefit = action_or_flow.values_at 'inner', 'benefit'
+
+        if inner_action.is_a? Array
+          @actions = ServiceFlow::Flow.new inner_action
+          actor = @actions.first_action.actor.class.to_s.split('::').last
+          method = @actions.first_action.method
+          lru_type = decide_lru_type(actor, method)
+          @cache = ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit: benefit )
+          @params_scheme = ::Cache::ParamsScheme[actor][method]
+        else
+          @actions = Action.build inner_action
+          if @actions.respond_to? :actor
+            actor = @actions.actor.class.to_s.split('::').last
+            method = @actions.method
+            scheme = ::Cache::ParamsScheme[actor][method]
+            lru_type = decide_lru_type(actor, method)
+          else
+            scheme = @actions.branches.each_with_object([]) do |br, ary|
+              class_name = br.first_action.actor.class.to_s.split('::').last
+              ary.concat ::Cache::ParamsScheme[class_name][br.first_action.method]
+            end
+            scheme.uniq!
+            lru_type = 'LRUInBytes'
+          end
+          @cache = ::Cache::CachePool.new(nil, Object.const_get("::Cache::#{lru_type}"), benefit:benefit )
+          @params_scheme = scheme
+        end
+      else
+        @actions, @cache, @params_scheme = action_or_flow, cache, params_scheme
+      end
       @log, @cache_log = [], []
       @lru_clock = 0
     end
@@ -53,9 +84,9 @@ module ServiceFlow
         json, status= cache.get params_to_key(params)
       end
 
-      if json.nil? 
+      if json.nil?
         desc = nil
-      else 
+      else
         data = JSON.parse json
         desc = ::Cache::Descriptor.new(params, data['content'], data['lru_time'])
         if !desc.lru_time.nil? && desc.lru_time < lru_clock
@@ -65,12 +96,12 @@ module ServiceFlow
           end
           refresh_caching = Benchmark.ms do
             sleep( @actions.caching_time.to_f / 1000 )
-            desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
+            desc = ::Cache::Descriptor.new(params, data, new_lru_time)
             cache.set params_to_key(params), desc.to_json
           end
           Log.debug 'End refresh cache'
         end
-      end 
+      end
 
       status ||= (desc.nil? ? :miss : :equal)
 
@@ -95,7 +126,7 @@ module ServiceFlow
         # time cost of set cache
         miss_caching = Benchmark.ms do
           sleep( @actions.caching_time.to_f / 1000 )
-          desc = ::Cache::Descriptor.new(params, data, new_lru_time) 
+          desc = ::Cache::Descriptor.new(params, data, new_lru_time)
           # data = desc.to_json
           cache.set params_to_key(params), desc.to_json
           # Log.debug "Set cache, data: #{data}"
@@ -105,7 +136,7 @@ module ServiceFlow
 
       @cache_log << [ StatusMap[status], cache.size, query_elapse, miss_trans, miss_caching, refresh_trans, refresh_caching]
       desc.content
-      
+
     end
 
     def params_to_key(params)
@@ -168,5 +199,12 @@ actions: #{actions.inspect}
 ==
       INSPECT
     end
+
+    private
+
+    def decide_lru_type(actor, method)
+      LRUConfig.has_key?("#{actor}:#{method}") ? LRUConfig["#{actor}:#{method}"]['type'] : LRUConfig['default']['type']
+    end
+
   end
 end
