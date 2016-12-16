@@ -23,6 +23,9 @@ module Cache
     end
 
     def self.strategy=(strategy)
+      unless [:rand, :bss, :fbss].include? strategy
+        raise "Unsupported strategy: #{strategy}"
+      end
       @@strategy = strategy
     end
 
@@ -89,7 +92,7 @@ module Cache
       when :rand
         tmp = @@pool.select { |c| c.size > 0 }
         tmp[rand(tmp.size)]._discard
-      when :benefit_size, :bs
+      when :bs
         tmp = []
         @@pool.each_with_index do |c, i|
           tmp << [c, @@benefit[i] / c.peek.last.bytesize] if c.size > 0
@@ -101,6 +104,8 @@ module Cache
           tmp << [c, @@benefit[i] / (c.peek.last.bytesize * c.size)] if c.size > 0
         end
         tmp.min_by{ |x| x.last }.first._discard
+      else
+        raise "Unsupported strategy: #{@@strategy}"
       end
     end
 

@@ -180,12 +180,12 @@ module ServiceFlow
           ob["#{key}_trans".to_sym] = s[:count][key] == 0 ? 0 : s[:elapse]["#{key}_trans".to_sym] / s[:count][key]
           ob["#{key}_caching".to_sym] = s[:count][key] == 0 ? 0 : s[:elapse]["#{key}_caching".to_sym] / s[:count][key]
         end
-        s[:avg_elapse][:query] = s[:elapse][:query] / s[:count][:query]
+        s[:avg_elapse][:query] = s[:count][:query] == 0 ? 0 : s[:elapse][:query] / s[:count][:query]
 
         s[:rate] = [:miss, :refresh].each_with_object({}) do |key, ob|
-          ob[key] = s[:count][key].to_f / s[:count][:query]
+          ob[key] = s[:count][:query] == 0 ? 0 : s[:count][key].to_f / s[:count][:query]
         end
-        s[:rate][:hit] = ( s[:count][:equal] + s[:count][:contain] ).to_f / s[:count][:query]
+        s[:rate][:hit] = s[:count][:query] == 0 ? 0 : ( s[:count][:equal] + s[:count][:contain] ).to_f / s[:count][:query]
         s
       end
     end
