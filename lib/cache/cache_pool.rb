@@ -94,7 +94,7 @@ module Cache
         @@pool.each_with_index do |c, i|
           tmp << [c, @@benefit[i] / c.peek.last.bytesize] if c.size > 0
         end
-        tmp.sample(2).min_by{ |x| x.last }.first._discard
+        tmp.min_by{ |x| x.last }.first._discard
       when :bss
         tmp = []
         @@pool.each_with_index do |c, i|

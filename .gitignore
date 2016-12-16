@@ -6,3 +6,5 @@ test/data/*
 
 log/*
 multiple_log/*
+
+nohup.out
