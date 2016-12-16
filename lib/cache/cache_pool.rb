@@ -1,14 +1,34 @@
 module Cache
   class CachePool
 
+    @@aging_threshold = 100
+    @@aging_rate = 2
+
     @@capacity = 1024 * 1024
     @@strategy = :rand
 
     @@pool = []
-    @@map = {}
     @@benefit = []
+    @@counter = []
+    @@counter_mutex = Mutex.new
 
     @@log = []
+
+    def self.aging_threshold
+      @@aging_threshold
+    end
+
+    def self.aging_threshold=(aging_threshold)
+      @@aging_threshold = aging_threshold
+    end
+
+    def self.aging_rate
+      @@aging_rate
+    end
+
+    def self.aging_rate=(aging_rate)
+      @@aging_rate = aging_rate
+    end
 
     def self.capacity
       @@capacity
@@ -33,12 +53,12 @@ module Cache
       @@pool
     end
 
-    def self.map
-      @@map
-    end
-
     def self.benefit
       @@benefit
+    end
+
+    def self.counter
+      @@counter
     end
 
     def self.log
@@ -49,18 +69,22 @@ module Cache
       @@pool.inject(0){ |sum, c| sum + c.size }
     end
 
+    def self.inner_cache_size
+      @@pool.map{ |c| c.size }
+    end
+
     attr_reader :cache
 
     def initialize(id = nil, lru_class = LRUInBytes, options = {})
-      @id = id
-      if @id.nil?
-        @id = @@pool.size
-      else
-        @@map[id] = @@pool.size
+      unless id.nil?
+        raise ArgumentError.new 'Explicit `id` no longer supported'
       end
+
+      @id = @@pool.size
       @cache = lru_class.new(nil)
       @@pool << @cache
       @@benefit << options.fetch(:benefit, 0)
+      @@counter << 0
     end
 
     def size( global = false )
@@ -72,6 +96,12 @@ module Cache
     end
 
     def get(key)
+      @@counter_mutex.synchronize do
+        @@counter[@id] += 1
+        if @@counter.inject(:+) > @@aging_threshold
+          @@counter.map! { |c| c / @@aging_rate }
+        end
+      end
       cache.get(key)
     end
 
@@ -102,6 +132,15 @@ module Cache
         tmp = []
         @@pool.each_with_index do |c, i|
           tmp << [c, @@benefit[i] / (c.peek.last.bytesize * c.size)] if c.size > 0
+        end
+        tmp.min_by{ |x| x.last }.first._discard
+      when :fbss
+        tmp = []
+        @@counter_mutex.synchronize do
+          sum = @@counter.inject(:+)
+          @@pool.each_with_index do |c, i|
+            tmp << [c, (1 + @@counter[i].to_f / sum) * @@benefit[i] / (c.peek.last.bytesize * c.size)] if c.size > 0
+          end
         end
         tmp.min_by{ |x| x.last }.first._discard
       else
