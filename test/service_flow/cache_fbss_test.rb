@@ -15,7 +15,7 @@ class CacheFbssTest < Minitest::Test
     @dining_flow_raw = YAML.load_file PathConstant::Root.join('multiple/dining.yml')
   end
 
-  def test_fbss
+  def ntest_fbss
     Cache::CachePool.capacity = 10000
     Cache::CachePool.strategy = :fbss
 
@@ -38,4 +38,28 @@ class CacheFbssTest < Minitest::Test
     puts Cache::CachePool.inner_cache_size.inspect
   end
 
+  def test_f0bss
+    Cache::CachePool.capacity = 10000
+    Cache::CachePool.strategy = :rand
+    Cache::CachePool.aging_threshold = 5
+    Cache::CachePool.aging_rate = 1
+
+    weather = ServiceFlow::Flow.new @weather_flow_raw
+    place_detail = ServiceFlow::Flow.new @place_detail_flow_raw
+    puts Cache::CachePool.counter.inspect
+    puts Cache::CachePool.inner_cache_size.inspect
+
+    weather.start
+    weather.start
+    weather.start
+    weather.start
+    puts Cache::CachePool.counter.inspect
+    puts Cache::CachePool.inner_cache_size.inspect
+    place_detail.start
+    puts Cache::CachePool.counter.inspect
+    puts Cache::CachePool.inner_cache_size.inspect
+    place_detail.start
+    puts Cache::CachePool.counter.inspect
+    puts Cache::CachePool.inner_cache_size.inspect
+  end
 end

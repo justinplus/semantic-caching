@@ -29,7 +29,7 @@ end
 @share_mode = ARGV[0]
 raise "Invalid param share_mode: `#{@share_mode}`!" unless ['shared', 'isolated'].include? @share_mode
 @strategy = ARGV[1]
-raise "Invalid param strategy: `#{@strategy}`!" unless ['bss', 'fbss'].include? @strategy
+raise "Invalid param strategy: `#{@strategy}`!" unless ['rand', 'bss', 'fbss', 'f0bss'].include? @strategy
 @capacity = Float(ARGV[2]).to_i
 
 # set strategy & capacity

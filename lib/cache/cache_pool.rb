@@ -43,7 +43,7 @@ module Cache
     end
 
     def self.strategy=(strategy)
-      unless [:rand, :bss, :fbss].include? strategy
+      unless [:rand, :bss, :fbss, :f0bss].include? strategy
         raise "Unsupported strategy: #{strategy}"
       end
       @@strategy = strategy
@@ -140,6 +140,15 @@ module Cache
           sum = @@counter.inject(:+)
           @@pool.each_with_index do |c, i|
             tmp << [c, (1 + @@counter[i].to_f / sum) * @@benefit[i] / (c.peek.last.bytesize * c.size)] if c.size > 0
+          end
+        end
+        tmp.min_by{ |x| x.last }.first._discard
+      when :f0bss
+        tmp = []
+        @@counter_mutex.synchronize do
+          sum = @@counter.inject(:+)
+          @@pool.each_with_index do |c, i|
+            tmp << [c, (@@counter[i].to_f / sum) * @@benefit[i] / (c.peek.last.bytesize * c.size)] if c.size > 0
           end
         end
         tmp.min_by{ |x| x.last }.first._discard
