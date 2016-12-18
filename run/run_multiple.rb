@@ -32,14 +32,37 @@ raise "Invalid param share_mode: `#{@share_mode}`!" unless ['shared', 'isolated'
 raise "Invalid param strategy: `#{@strategy}`!" unless ['rand', 'bss', 'fbss', 'f0bss'].include? @strategy
 @capacity = Float(ARGV[2]).to_i
 
+if ARGV.size > 3
+  ARGV.last(ARGV.size - 3).each do |param|
+    key, val = param.split '='
+    case key
+    when '--aging-threshold'
+      @aging_threshold = Float(val).to_i
+    when '--aging-rate'
+      @aging_rate = Float(val).to_i
+    end
+  end
+end
+
 # set strategy & capacity
 Cache::CachePool.strategy = @strategy.to_sym
 Cache::CachePool.capacity = 1024 * 1024 * @capacity
+Cache::CachePool.aging_threshold = @aging_threshold unless @aging_threshold.nil?
+Cache::CachePool.aging_rate = @aging_rate unless @aging_rate.nil?
 
 # prepare folders
 time_str = Time.now.strftime('%Y%m%d_%H%M%S');
-@log_path = PathConstant::Root.join('multiple_log').join("#{@share_mode}-#{@strategy}-#{@capacity}-#{time_str}")
+aging_threshold_str = (@aging_threshold.nil? ? '' : "-at#{@aging_threshold}")
+aging_rate_str = (@aging_rate.nil? ? '' : "-ar#{@aging_rate}")
+folder_name = "#{@share_mode}-#{@strategy}-#{@capacity}"
+folder_name += aging_threshold_str unless aging_threshold_str.empty?
+folder_name += aging_rate_str unless aging_rate_str.empty?
+
+@log_path = PathConstant::Root.join('multiple_log').join("#{folder_name}-#{time_str}")
 @log_path.mkdir
+
+puts Cache::CachePool.aging_threshold
+puts Cache::CachePool.aging_rate
 
 # prepare flows
 @weather_flow_raw = YAML.load_file PathConstant::Root.join('multiple/weather.yml')
